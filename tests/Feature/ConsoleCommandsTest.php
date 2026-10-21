@@ -15,6 +15,21 @@ it('creates an admin with an existing bcrypt hash', function () {
     expect(Hash::check('altes-passwort', $user->password))->toBeTrue();
 });
 
+it('creates an admin with a password option without prompting', function () {
+    $this->artisan('matrix:admin', ['email' => 'admin@matrix-bochum.de', '--name' => 'Admin', '--password' => 'ein-langes-passwort'])
+        ->assertSuccessful();
+
+    $user = User::query()->where('email', 'admin@matrix-bochum.de')->sole();
+    expect(Hash::check('ein-langes-passwort', $user->password))->toBeTrue();
+});
+
+it('rejects a password option that is too short', function () {
+    $this->artisan('matrix:admin', ['email' => 'admin@matrix-bochum.de', '--password' => 'kurz'])
+        ->assertFailed();
+
+    expect(User::query()->count())->toBe(0);
+});
+
 it('rejects password hashes that are not bcrypt', function () {
     $this->artisan('matrix:admin', ['email' => 'admin@matrix-bochum.de', '--password-hash' => 'klartext'])
         ->assertFailed();
