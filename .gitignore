@@ -1,13 +1,38 @@
-/config/config.php
-/storage/*
-!/storage/.gitkeep
-/public/uploads/events/*
-!/public/uploads/events/.gitkeep
-
-# Lokale Werkzeuge / Editoren
-/.claude/
-/.idea
-/.vscode
 *.log
 .DS_Store
+.env
+.env.backup
+.env.production
+.phpactor.json
+.phpunit.result.cache
+/.codex
+/.cursor/
+/.idea
+/.nova
+/.phpunit.cache
+/.vscode
+/.zed
+/auth.json
+/node_modules
+/public/build
+/public/hot
+/public/storage
+/storage/*.key
+/storage/media-library
+/storage/pail
+/vendor
+_ide_helper.php
+Homestead.json
+Homestead.yaml
 Thumbs.db
+
+# Lokale Claude-Dateien (Skills von Boost werden mit eingecheckt)
+/.claude/*
+!/.claude/skills/
+
+# Hochgeladene Bilder (liegen direkt unter public/uploads/, kein storage:link nötig)
+/public/uploads/*
+!/public/uploads/.htaccess
+
+# Zugangsdaten des ersten Admins (nach dem ersten Login löschen)
+/storage/admin-zugang.txt
