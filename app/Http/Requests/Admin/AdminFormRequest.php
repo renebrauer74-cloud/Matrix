@@ -32,4 +32,43 @@ abstract class AdminFormRequest extends FormRequest
             'dimensions:min_width=200,min_height=200',
         ];
     }
+
+    /**
+     * Regeln für ein Video (MP4, WebM oder MOV).
+     *
+     * @return list<string>
+     */
+    protected function videoRules(bool $required = false): array
+    {
+        return [
+            $required ? 'required' : 'nullable',
+            'file',
+            'mimetypes:video/mp4,application/mp4,video/webm,video/quicktime',
+            'max:'.config('matrix.uploads.video_max_kilobytes'),
+        ];
+    }
+
+    /**
+     * Fehlermeldungen für Bild- und Video-Uploads der genannten Felder.
+     *
+     * @return array<string, string>
+     */
+    protected function uploadMessages(string ...$fields): array
+    {
+        $messages = [];
+
+        foreach ($fields as $field) {
+            $messages += [
+                $field.'.image' => 'Bitte ein JPG-, PNG-, WebP-, GIF- oder AVIF-Bild hochladen.',
+                $field.'.mimes' => 'Bitte ein JPG-, PNG-, WebP-, GIF- oder AVIF-Bild hochladen.',
+                $field.'.mimetypes' => 'Bitte ein Video als MP4, WebM oder MOV hochladen.',
+                $field.'.dimensions' => 'Das Bild ist zu klein (mindestens 200 × 200 Pixel).',
+                $field.'.uploaded' => 'Die Datei ist zu groß oder wurde nicht vollständig hochgeladen.',
+                $field.'.max' => 'Die Datei ist zu groß (Bilder max. '.(config('matrix.uploads.max_kilobytes') / 1024)
+                    .' MB, Videos max. '.(config('matrix.uploads.video_max_kilobytes') / 1024).' MB).',
+            ];
+        }
+
+        return $messages;
+    }
 }

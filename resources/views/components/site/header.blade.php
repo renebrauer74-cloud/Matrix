@@ -5,7 +5,9 @@
         ['url' => route('events.index', 'konzerte'), 'label' => 'Konzerte', 'active' => $categoryPage('konzerte')],
         ['url' => route('events.index', 'partys'), 'label' => 'Partys', 'active' => $categoryPage('partys')],
         ['url' => route('location'), 'label' => 'Location', 'active' => request()->routeIs('location')],
+        ['url' => route('corporate'), 'label' => 'Firmen', 'active' => request()->routeIs('corporate')],
         ['url' => route('directions'), 'label' => 'Anfahrt', 'active' => request()->routeIs('directions')],
+        ['url' => route('contact'), 'label' => 'Kontakt', 'active' => request()->routeIs('contact')],
     ];
 @endphp
 <header class="site-header" data-header>

@@ -30,6 +30,25 @@
         $$('details.menu[open]').forEach((d) => { if (!d.contains(e.target)) d.removeAttribute('open'); });
     });
 
+    // --- Einfache Upload-Felder (Seiten, Galerie): gewählte Dateien anzeigen --------------
+    $$('[data-upload]').forEach((zone) => {
+        const input = zone.querySelector('input[type="file"]');
+        const names = zone.querySelector('[data-upload-names]');
+        const show = () => {
+            const files = [...input.files];
+            names.textContent = files.length > 3 ? files.length + ' Dateien ausgewählt' : files.map((f) => f.name).join(', ');
+            zone.classList.toggle('is-over', files.length > 0);
+        };
+        input.addEventListener('change', show);
+        ['dragenter', 'dragover'].forEach((t) => zone.addEventListener(t, () => zone.classList.add('is-over')));
+        zone.addEventListener('dragleave', () => zone.classList.toggle('is-over', input.files.length > 0));
+        zone.addEventListener('drop', () => setTimeout(show, 0));
+        zone.closest('form')?.addEventListener('submit', (e) => {
+            if (e.defaultPrevented) return;
+            $$('button[type="submit"]', e.target).forEach((b) => { b.disabled = true; });
+        });
+    });
+
     // --- Event-Formular ----------------------------------------------------------------
     const form = $('[data-event-form]');
     if (!form) return;

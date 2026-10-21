@@ -38,6 +38,28 @@ return [
 
     'uploads' => [
         'max_kilobytes' => 12 * 1024,
+
+        // Videos für Firmen- und Jobs-Seite (MP4, WebM, MOV)
+        'video_max_kilobytes' => 100 * 1024,
+
+        // Anhänge aus den Website-Formularen (Lebenslauf, Foto einer Fundsache)
+        'attachment_max_kilobytes' => 10 * 1024,
+
+        // Anhänge sind nicht öffentlich – auf Laravel Cloud einen privaten Bucket als Disk eintragen
+        'private_disk' => env('MEDIA_PRIVATE_DISK', 'local'),
+    ],
+
+    /*
+    |--------------------------------------------------------------------------
+    | Posteingang
+    |--------------------------------------------------------------------------
+    |
+    | Nachrichten pro Seite im Admin-Posteingang.
+    |
+    */
+
+    'inbox' => [
+        'per_page' => 30,
     ],
 
     /*

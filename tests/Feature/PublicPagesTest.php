@@ -7,7 +7,7 @@ use Illuminate\Support\Facades\Storage;
 
 it('renders every public page while the database is empty', function (string $routeName) {
     $this->get(route($routeName))->assertOk();
-})->with(['home', 'events.index', 'location', 'directions', 'jobs', 'imprint', 'privacy']);
+})->with(['home', 'events.index', 'location', 'directions', 'jobs', 'corporate', 'contact', 'lost-items', 'imprint', 'privacy']);
 
 it('renders the category pages of the programme', function (string $slug) {
     $this->get(route('events.index', $slug))->assertOk();

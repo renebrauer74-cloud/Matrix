@@ -61,6 +61,21 @@ if (! function_exists('format_text')) {
     }
 }
 
+if (! function_exists('text_lines')) {
+    /**
+     * Mehrzeiliges Admin-Feld als Liste, z. B. Aufgaben einer Stelle – leere Zeilen fallen weg.
+     *
+     * @return list<string>
+     */
+    function text_lines(?string $text): array
+    {
+        return array_values(array_filter(
+            array_map('trim', preg_split('/\R/', (string) $text) ?: []),
+            fn (string $line): bool => $line !== '',
+        ));
+    }
+}
+
 if (! function_exists('phone_link')) {
     /**
      * Telefonnummer für tel:-Links, z. B. „0234292102“.
