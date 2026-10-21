@@ -1,0 +1,5 @@
+# Falls der Webserver-Root nicht auf /public zeigen kann: alles dorthin umleiten.
+<IfModule mod_rewrite.c>
+    RewriteEngine On
+    RewriteRule ^(.*)$ public/$1 [L]
+</IfModule>

@@ -1,0 +1,13 @@
+/config/config.php
+/storage/*
+!/storage/.gitkeep
+/public/uploads/events/*
+!/public/uploads/events/.gitkeep
+
+# Lokale Werkzeuge / Editoren
+/.claude/
+/.idea
+/.vscode
+*.log
+.DS_Store
+Thumbs.db
