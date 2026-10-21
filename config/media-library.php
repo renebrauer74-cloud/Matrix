@@ -50,7 +50,7 @@ return [
      * The maximum file size of an item in bytes.
      * Adding a larger file will result in an exception.
      */
-    'max_file_size' => 1024 * 1024 * 12, // 12MB
+    'max_file_size' => 1024 * 1024 * 100, // 100MB – Videos; Bilder begrenzt die Validierung auf matrix.uploads.max_kilobytes
 
     /*
      * Uploads whose file name contains any of these extensions will be rejected.

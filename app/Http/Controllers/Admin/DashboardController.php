@@ -3,15 +3,17 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Actions\Events\CountUpcomingEventsAction;
+use App\Actions\Messages\CountOpenMessagesAction;
 use App\Enums\Events\EventStatusEnum;
 use App\Enums\Events\TicketStatusEnum;
 use App\Http\Controllers\Controller;
 use App\Models\Event;
+use App\Models\Message;
 use Illuminate\View\View;
 
 class DashboardController extends Controller
 {
-    public function __invoke(CountUpcomingEventsAction $countUpcomingEvents): View
+    public function __invoke(CountUpcomingEventsAction $countUpcomingEvents, CountOpenMessagesAction $countOpenMessages): View
     {
         $counts = $countUpcomingEvents->execute();
 
@@ -24,6 +26,8 @@ class DashboardController extends Controller
             ],
             'counts' => $counts,
             'next' => Event::query()->upcoming()->with('media')->orderBy('starts_at')->limit(6)->get(),
+            'messageCounts' => $countOpenMessages->execute(),
+            'latestMessages' => Message::query()->open()->latest()->latest('id')->limit(5)->get(),
         ]);
     }
 }

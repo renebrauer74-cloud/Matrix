@@ -61,7 +61,8 @@
                     <p>Konzert, Firmenfeier, Hochzeit oder Lesung – sprecht uns an, wir finden den passenden Raum.</p>
                 </div>
                 <div class="ticket-band-actions">
-                    <a class="btn btn-accent btn-lg" href="mailto:{{ config('matrix.venue.email') }}?subject=Anfrage%20Location"><x-icon name="mail" /> Anfrage senden</a>
+                    <a class="btn btn-accent btn-lg" href="{{ route('corporate') }}#anfrage"><x-icon name="mail" /> Anfrage senden</a>
+                    <a class="btn btn-outline" href="{{ route('corporate') }}">Infos für Firmen</a>
                 </div>
             </div>
         </div>

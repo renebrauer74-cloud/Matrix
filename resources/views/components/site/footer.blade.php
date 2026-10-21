@@ -33,7 +33,10 @@
                 <li><a href="{{ route('events.index', 'konzerte') }}">Konzerte</a></li>
                 <li><a href="{{ route('events.index', 'partys') }}">Partys</a></li>
                 <li><a href="{{ route('location') }}">Location</a></li>
+                <li><a href="{{ route('corporate') }}">Firmenfeiern &amp; Events</a></li>
                 <li><a href="{{ route('jobs') }}">Jobs</a></li>
+                <li><a href="{{ route('lost-items') }}">Fundsachen</a></li>
+                <li><a href="{{ route('contact') }}">Kontakt</a></li>
             </ul>
         </div>
     </div>

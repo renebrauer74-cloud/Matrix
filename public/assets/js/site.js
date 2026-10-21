@@ -249,9 +249,40 @@
         });
     });
 
+    // --- Formulare: doppeltes Absenden verhindern ------------------------------------------
+    document.querySelectorAll('[data-site-form]').forEach((form) => form.addEventListener('submit', () => {
+        form.querySelectorAll('button[type="submit"]').forEach((b) => { b.disabled = true; });
+    }));
+
+    // --- Galerie mit Lightbox --------------------------------------------------------------
+    const dialog = document.querySelector('[data-lightbox-dialog]');
+    const links = [...document.querySelectorAll('[data-lightbox]')];
+    if (dialog && links.length && typeof dialog.showModal === 'function') {
+        const img = dialog.querySelector('[data-lightbox-img]');
+        let current = 0;
+        const show = (i) => {
+            current = (i + links.length) % links.length;
+            img.src = links[current].href;
+            img.alt = links[current].querySelector('img')?.alt || '';
+        };
+        links.forEach((a, i) => a.addEventListener('click', (e) => {
+            e.preventDefault();
+            show(i);
+            dialog.showModal();
+        }));
+        dialog.querySelector('[data-lightbox-prev]').addEventListener('click', () => show(current - 1));
+        dialog.querySelector('[data-lightbox-next]').addEventListener('click', () => show(current + 1));
+        dialog.querySelector('[data-lightbox-close]').addEventListener('click', () => dialog.close());
+        dialog.addEventListener('click', (e) => { if (e.target === dialog) dialog.close(); });
+        dialog.addEventListener('keydown', (e) => {
+            if (e.key === 'ArrowLeft') show(current - 1);
+            if (e.key === 'ArrowRight') show(current + 1);
+        });
+    }
+
     // --- Einblenden beim Scrollen -----------------------------------------------------------
     if ('IntersectionObserver' in window) {
-        const els = document.querySelectorAll('.section-head, .event-card, .room-tile, .room, .split, .ticket-band, .month-title');
+        const els = document.querySelectorAll('.section-head, .event-card, .room-tile, .room, .split, .ticket-band, .month-title, .job-card, .feature, .gallery-item');
         const io = new IntersectionObserver((entries) => {
             entries.forEach((en) => {
                 if (!en.isIntersecting) return;

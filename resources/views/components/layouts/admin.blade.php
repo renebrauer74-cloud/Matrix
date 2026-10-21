@@ -1,10 +1,17 @@
 @props(['title' => 'Admin'])
+@inject('countUnreadMessages', 'App\Actions\Messages\CountUnreadMessagesAction')
 @php
+    use App\Enums\Pages\PageEnum;
+
+    $editedPage = request()->route('page');
     $nav = [
-        ['route' => 'admin.dashboard', 'active' => 'admin.dashboard', 'label' => 'Dashboard', 'icon' => 'dashboard'],
-        ['route' => 'admin.events.index', 'active' => 'admin.events.*', 'label' => 'Veranstaltungen', 'icon' => 'calendar'],
-        ['route' => 'admin.users.index', 'active' => 'admin.users.*', 'label' => 'Benutzer', 'icon' => 'users'],
-        ['route' => 'admin.account.edit', 'active' => 'admin.account.*', 'label' => 'Mein Konto', 'icon' => 'user'],
+        ['url' => route('admin.dashboard'), 'active' => request()->routeIs('admin.dashboard'), 'label' => 'Dashboard', 'icon' => 'dashboard'],
+        ['url' => route('admin.events.index'), 'active' => request()->routeIs('admin.events.*'), 'label' => 'Veranstaltungen', 'icon' => 'calendar'],
+        ['url' => route('admin.messages.index'), 'active' => request()->routeIs('admin.messages.*'), 'label' => 'Nachrichten', 'icon' => 'mail', 'badge' => $countUnreadMessages->execute()],
+        ['url' => route('admin.job-positions.index'), 'active' => request()->routeIs('admin.job-positions.*') || $editedPage === PageEnum::Jobs, 'label' => 'Jobs', 'icon' => 'bar'],
+        ['url' => route('admin.pages.edit', PageEnum::Corporate), 'active' => $editedPage === PageEnum::Corporate, 'label' => 'Firmenseite', 'icon' => 'capacity'],
+        ['url' => route('admin.users.index'), 'active' => request()->routeIs('admin.users.*'), 'label' => 'Benutzer', 'icon' => 'users'],
+        ['url' => route('admin.account.edit'), 'active' => request()->routeIs('admin.account.*'), 'label' => 'Mein Konto', 'icon' => 'user'],
     ];
     $alerts = array_filter([
         'success' => session('success'),
@@ -31,7 +38,7 @@
         <a class="btn btn-accent sidebar-new" href="{{ route('admin.events.create') }}"><x-icon name="plus" /> Neue Veranstaltung</a>
         <nav class="sidebar-nav" aria-label="Admin-Navigation">
 @foreach ($nav as $item)
-            <a href="{{ route($item['route']) }}" @if (request()->routeIs($item['active'])) aria-current="page" @endif><x-icon :name="$item['icon']" /> {{ $item['label'] }}</a>
+            <a href="{{ $item['url'] }}" @if ($item['active']) aria-current="page" @endif><x-icon :name="$item['icon']" /> {{ $item['label'] }}@if (! empty($item['badge']))<span class="nav-badge" title="{{ $item['badge'] }} ungelesen">{{ $item['badge'] }}</span>@endif</a>
 @endforeach
         </nav>
         <div class="sidebar-foot">

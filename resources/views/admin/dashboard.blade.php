@@ -87,5 +87,30 @@
 @endforeach
             </div>
         </section>
+
+        <section class="panel">
+            <div class="panel-head">
+                <h2>Offene Nachrichten @if ($messageCounts['all'] > 0)<span class="count">{{ $messageCounts['all'] }}</span>@endif</h2>
+                <a class="link" href="{{ route('admin.messages.index') }}">Posteingang</a>
+            </div>
+@if ($latestMessages->isNotEmpty())
+            <ul class="mini-list">
+@foreach ($latestMessages as $item)
+                <li class="type-{{ $item->type->value }}">
+                    <a href="{{ route('admin.messages.show', $item) }}">
+                        <span class="mrow-icon"><x-icon :name="$item->type->icon()" /></span>
+                        <span class="mini-body">
+                            <strong>@if ($item->isUnread())<span class="dot" title="ungelesen"></span> @endif{{ $item->name }}</strong>
+                            <span>{{ $item->type->label() }} · {{ $item->subject }}</span>
+                        </span>
+                        <small class="muted">{{ $item->created_at->isToday() ? $item->created_at->format('H:i') : $item->created_at->format('d.m.') }}</small>
+                    </a>
+                </li>
+@endforeach
+            </ul>
+@else
+            <div class="empty"><p>Keine offenen Nachrichten.</p></div>
+@endif
+        </section>
     </div>
 </x-layouts.admin>
