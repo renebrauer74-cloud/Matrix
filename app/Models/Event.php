@@ -27,7 +27,7 @@ use Spatie\MediaLibrary\MediaCollections\Models\Media;
     'title', 'slug', 'subtitle', 'category', 'category_label', 'description',
     'starts_at', 'doors_at', 'ends_at', 'rooms', 'organizer_id', 'image_focus',
     'ticket_url', 'social_links', 'price_presale', 'price_box', 'age_rating',
-    'ticket_status', 'status', 'is_featured', 'created_by',
+    'ticket_status', 'status', 'publish_at', 'is_featured', 'created_by',
 ])]
 class Event extends Model implements HasMedia
 {
@@ -55,6 +55,7 @@ class Event extends Model implements HasMedia
             'image_focus' => ImageFocusEnum::class,
             'ticket_status' => TicketStatusEnum::class,
             'status' => EventStatusEnum::class,
+            'publish_at' => 'datetime',
             'is_featured' => 'boolean',
         ];
     }
@@ -96,12 +97,24 @@ class Event extends Model implements HasMedia
     }
 
     /**
-     * Nur veröffentlichte Veranstaltungen.
+     * Nur Veranstaltungen, die auf der Website stehen – geplante erst ab ihrem Veröffentlichungszeitpunkt.
      */
     #[Scope]
     protected function published(Builder $query): void
     {
-        $query->where('status', EventStatusEnum::Published);
+        $query->where('status', EventStatusEnum::Published)
+            ->where(fn (Builder $query) => $query
+                ->whereNull('publish_at')
+                ->orWhere('publish_at', '<=', now()));
+    }
+
+    /**
+     * Veröffentlicht, aber der Veröffentlichungszeitpunkt liegt noch in der Zukunft.
+     */
+    #[Scope]
+    protected function scheduled(Builder $query): void
+    {
+        $query->where('status', EventStatusEnum::Published)->where('publish_at', '>', now());
     }
 
     /**
@@ -133,6 +146,19 @@ class Event extends Model implements HasMedia
     public function isDraft(): bool
     {
         return $this->status === EventStatusEnum::Draft;
+    }
+
+    public function isScheduled(): bool
+    {
+        return $this->status === EventStatusEnum::Published && $this->publish_at?->isFuture() === true;
+    }
+
+    /**
+     * Für Besucher sichtbar – weder Entwurf noch erst später geplant.
+     */
+    public function isOnline(): bool
+    {
+        return ! $this->isDraft() && ! $this->isScheduled();
     }
 
     public function isPast(): bool

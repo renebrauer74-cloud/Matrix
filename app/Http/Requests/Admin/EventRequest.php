@@ -4,14 +4,17 @@ namespace App\Http\Requests\Admin;
 
 use App\Enums\Events\EventCategoryEnum;
 use App\Enums\Events\EventOrganizerEnum;
+use App\Enums\Events\EventPublicationEnum;
 use App\Enums\Events\EventStatusEnum;
 use App\Enums\Events\ImageFocusEnum;
 use App\Enums\Events\TicketStatusEnum;
 use App\Enums\Location\RoomEnum;
 use Carbon\CarbonImmutable;
+use Closure;
 use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
+use Illuminate\Validation\Validator;
 
 class EventRequest extends AdminFormRequest
 {
@@ -76,7 +79,9 @@ class EventRequest extends AdminFormRequest
             'price_box' => ['nullable', 'string', 'max:60'],
             'age_rating' => ['nullable', 'string', 'max:40'],
             'ticket_status' => ['nullable', Rule::enum(TicketStatusEnum::class)],
-            'status' => ['required', Rule::enum(EventStatusEnum::class)],
+            'status' => ['required', Rule::enum(EventPublicationEnum::class)],
+            'publish_date' => ['exclude_unless:status,'.EventPublicationEnum::Scheduled->value, 'required', 'date_format:Y-m-d'],
+            'publish_time' => ['exclude_unless:status,'.EventPublicationEnum::Scheduled->value, 'required', 'date_format:H:i'],
             'is_featured' => ['nullable', 'boolean'],
         ];
     }
@@ -95,6 +100,8 @@ class EventRequest extends AdminFormRequest
             'doors.date_format' => 'Ungültige Uhrzeit beim Einlass.',
             'end_time.date_format' => 'Ungültige Uhrzeit beim Ende.',
             'rooms.*' => 'Bitte nur Räume aus der Liste auswählen.',
+            'publish_date.*' => 'Bitte angeben, wann die Veranstaltung online gehen soll.',
+            'publish_time.*' => 'Bitte angeben, wann die Veranstaltung online gehen soll.',
             'organizer_name.required' => 'Bitte den Namen des Veranstalters eingeben.',
             'organizer_email.email' => 'Bitte eine gültige E-Mail-Adresse angeben.',
             'organizer_website.url' => 'Bitte einen gültigen Link angeben.',
@@ -115,7 +122,7 @@ class EventRequest extends AdminFormRequest
      */
     public function eventAttributes(): array
     {
-        $startsAt = CarbonImmutable::createFromFormat('!Y-m-d H:i', $this->input('date').' '.$this->input('time'));
+        $startsAt = $this->startsAt();
 
         return [
             'title' => $this->input('title'),
@@ -134,9 +141,56 @@ class EventRequest extends AdminFormRequest
             'price_box' => $this->input('price_box'),
             'age_rating' => $this->input('age_rating'),
             'ticket_status' => $this->enum('ticket_status', TicketStatusEnum::class) ?? TicketStatusEnum::Available,
-            'status' => $this->enum('status', EventStatusEnum::class),
+            'status' => $this->publication() === EventPublicationEnum::Draft ? EventStatusEnum::Draft : EventStatusEnum::Published,
+            'publish_at' => $this->publishAt(),
             'is_featured' => $this->boolean('is_featured'),
         ];
+    }
+
+    /**
+     * Der geplante Zeitpunkt muss in der Zukunft und vor Beginn der Veranstaltung liegen.
+     *
+     * @return array<int, Closure(Validator): void>
+     */
+    public function after(): array
+    {
+        return [
+            function (Validator $validator): void {
+                if ($validator->errors()->hasAny(['date', 'time', 'publish_date', 'publish_time']) || $this->publication() !== EventPublicationEnum::Scheduled) {
+                    return;
+                }
+
+                $publishAt = $this->publishAt();
+
+                if ($publishAt->isPast()) {
+                    $validator->errors()->add('publish_date', 'Der Zeitpunkt liegt schon in der Vergangenheit – dann einfach „Online“ wählen.');
+                } elseif ($publishAt->greaterThanOrEqualTo($this->startsAt())) {
+                    $validator->errors()->add('publish_date', 'Die Veranstaltung muss vor ihrem Beginn online gehen.');
+                }
+            },
+        ];
+    }
+
+    private function startsAt(): CarbonImmutable
+    {
+        return CarbonImmutable::createFromFormat('!Y-m-d H:i', $this->input('date').' '.$this->input('time'));
+    }
+
+    public function publication(): ?EventPublicationEnum
+    {
+        return $this->enum('status', EventPublicationEnum::class);
+    }
+
+    /**
+     * Zeitpunkt, ab dem eine geplante Veranstaltung auf der Website erscheint – null bei „Online“ und „Entwurf“.
+     */
+    public function publishAt(): ?CarbonImmutable
+    {
+        if ($this->publication() !== EventPublicationEnum::Scheduled) {
+            return null;
+        }
+
+        return CarbonImmutable::createFromFormat('!Y-m-d H:i', $this->input('publish_date').' '.$this->input('publish_time'));
     }
 
     public function isExternal(): bool

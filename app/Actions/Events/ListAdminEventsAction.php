@@ -26,6 +26,7 @@ class ListAdminEventsAction
             ->when($filter === EventListFilterEnum::Upcoming, fn (Builder $query) => $query->upcoming())
             ->when($filter === EventListFilterEnum::Past, fn (Builder $query) => $query->past())
             ->when($filter === EventListFilterEnum::Drafts, fn (Builder $query) => $query->where('status', EventStatusEnum::Draft))
+            ->when($filter === EventListFilterEnum::Scheduled, fn (Builder $query) => $query->scheduled())
             ->when($category, fn (Builder $query) => $query->where('category', $category))
             ->when($search !== '', function (Builder $query) use ($search): void {
                 $like = '%'.addcslashes($search, '%_\\').'%';

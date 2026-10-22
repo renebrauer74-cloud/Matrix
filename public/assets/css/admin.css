@@ -150,6 +150,8 @@ code { font-size: .85em; padding: 1px 5px; border-radius: 4px; background: rgba(
 .tag-draft { color: var(--warn); border-color: rgba(255, 176, 32, .4); background: rgba(255, 176, 32, .08); }
 .tag-star { color: #ffd34d; border-color: rgba(255, 211, 77, .4); }
 .tag-soldout, .tag-cancelled { color: #fff; background: #c9342a; border-color: #c9342a; }
+.tag-scheduled { color: #7cc4ff; border-color: rgba(124, 196, 255, .45); background: rgba(124, 196, 255, .08); }
+.tag-scheduled .icon { width: 13px; height: 13px; }
 .tag-few { color: #1b1200; background: var(--warn); border-color: var(--warn); }
 .tag-almostsoldout { color: #fff; background: #ff6a1f; border-color: #ff6a1f; }
 
@@ -382,6 +384,12 @@ fieldset.field legend { padding: 0; margin-bottom: 7px; }
 .segmented-full { display: grid; grid-template-columns: 1fr 1fr; width: 100%; margin-bottom: 14px; }
 .segmented-full input[value="published"]:checked + span { color: var(--accent); }
 .segmented-full input[value="draft"]:checked + span { color: var(--warn); }
+.segmented-3 { grid-template-columns: repeat(3, 1fr); }
+.segmented-3 span { padding-inline: 6px; }
+.segmented-full input[value="scheduled"]:checked + span { color: #7cc4ff; }
+.publish-at { margin: -2px 0 14px; padding: 12px; border-radius: 11px; border: 1px dashed rgba(124, 196, 255, .45); background: rgba(124, 196, 255, .05); }
+.publish-at .grid-2 { grid-template-columns: 1fr 1fr; }
+.publish-at .field { margin-bottom: 8px; }
 
 .check { display: inline-flex; align-items: center; gap: 8px; font-weight: 600; cursor: pointer; font-size: .9rem; }
 .check input { width: 18px; height: 18px; accent-color: var(--danger); }
