@@ -1,16 +1,14 @@
+@inject('loadPage', 'App\Actions\Pages\LoadPageAction')
+@php
+    use App\Enums\Pages\PageEnum;
+@endphp
 <footer class="site-footer">
     <div class="container footer-grid">
         <div class="footer-brand">
             <img src="{{ asset('assets/img/logo.png') }}" alt="Matrix Bochum" width="110" height="53" loading="lazy">
             <p>Matrix &amp; Rockpalast Bochum – zwei Clubs, Live- &amp; Eventlocations im historischen Müser-Turm.</p>
-            <div class="footer-social">
-@if (config('matrix.venue.instagram'))
-                <a href="{{ config('matrix.venue.instagram') }}" target="_blank" rel="noopener" aria-label="Instagram"><x-icon name="instagram" /></a>
-@endif
-@if (config('matrix.venue.facebook'))
-                <a href="{{ config('matrix.venue.facebook') }}" target="_blank" rel="noopener" aria-label="Facebook"><x-icon name="facebook" /></a>
-@endif
-            </div>
+            <x-site.social-links class="footer-social" :links="$loadPage->execute(PageEnum::Social)->content['social_links'] ?? []" />
+
         </div>
         <div>
             <h2 class="footer-title">Adresse</h2>

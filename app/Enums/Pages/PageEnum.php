@@ -2,8 +2,10 @@
 
 namespace App\Enums\Pages;
 
+use App\Enums\Social\SocialPlatformEnum;
+
 /**
- * Seiten, deren Texte, Bilder und Videos im Admin-Bereich gepflegt werden.
+ * Seiten und Website-Bereiche, deren Inhalte im Admin-Bereich gepflegt werden.
  *
  * Der Wert steht in pages.key und ist zugleich der URL-Teil unter /admin/seiten/{page}.
  */
@@ -11,23 +13,26 @@ enum PageEnum: string
 {
     case Jobs = 'jobs';
     case Corporate = 'firmen';
+    case Social = 'social-media';
 
     public function label(): string
     {
         return match ($this) {
             self::Jobs => 'Jobs-Seite',
             self::Corporate => 'Firmenseite',
+            self::Social => 'Social Media',
         };
     }
 
     /**
-     * Öffentliche Route der Seite.
+     * Öffentliche Route der Seite – die Social-Media-Links stehen im Footer jeder Seite.
      */
     public function routeName(): string
     {
         return match ($this) {
             self::Jobs => 'jobs',
             self::Corporate => 'corporate',
+            self::Social => 'home',
         };
     }
 
@@ -66,6 +71,12 @@ enum PageEnum: string
                 'contact_name' => 'Event-Team Matrix',
                 'contact_phone' => config('matrix.venue.phone'),
                 'contact_email' => config('matrix.venue.email'),
+            ],
+            self::Social => [
+                'social_links' => array_values(array_filter([
+                    config('matrix.venue.instagram') ? ['platform' => SocialPlatformEnum::Instagram->value, 'url' => config('matrix.venue.instagram')] : null,
+                    config('matrix.venue.facebook') ? ['platform' => SocialPlatformEnum::Facebook->value, 'url' => config('matrix.venue.facebook')] : null,
+                ])),
             ],
         };
     }

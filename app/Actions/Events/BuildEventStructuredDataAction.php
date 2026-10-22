@@ -42,6 +42,11 @@ class BuildEventStructuredDataAction
                     'addressCountry' => 'DE',
                 ],
             ],
+            'organizer' => array_filter([
+                '@type' => 'Organization',
+                'name' => $event->organizer?->name ?? config('matrix.venue.name'),
+                'url' => $event->organizer ? $event->organizer->website : config('app.url'),
+            ]),
             'url' => route('events.show', $event),
         ];
 

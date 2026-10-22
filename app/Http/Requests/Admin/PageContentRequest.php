@@ -16,6 +16,14 @@ class PageContentRequest extends AdminFormRequest
     public const HIGHLIGHT_SLOTS = 6;
 
     /**
+     * Prepare the data for validation.
+     */
+    protected function prepareForValidation(): void
+    {
+        $this->prepareSocialLinks();
+    }
+
+    /**
      * Get the validation rules that apply to the request.
      *
      * @return array<string, ValidationRule|array<mixed>|string>
@@ -51,6 +59,7 @@ class PageContentRequest extends AdminFormRequest
                 'contact_phone' => ['nullable', 'string', 'max:60'],
                 'contact_email' => ['nullable', 'email', 'max:190'],
             ],
+            PageEnum::Social => $this->socialLinkRules(),
         };
     }
 
@@ -63,6 +72,7 @@ class PageContentRequest extends AdminFormRequest
             'hero_title.required' => 'Bitte eine Überschrift eingeben.',
             'contact_email.email' => 'Bitte eine gültige E-Mail-Adresse angeben.',
             ...$this->uploadMessages('hero_image', 'hero_video'),
+            ...$this->socialLinkMessages(),
         ];
     }
 
@@ -78,6 +88,10 @@ class PageContentRequest extends AdminFormRequest
      */
     public function pageContent(): array
     {
+        if ($this->page() === PageEnum::Social) {
+            return ['social_links' => $this->socialLinks()];
+        }
+
         $content = collect($this->validated())
             ->except(['hero_image', 'remove_hero_image', 'hero_video', 'remove_hero_video'])
             ->all();

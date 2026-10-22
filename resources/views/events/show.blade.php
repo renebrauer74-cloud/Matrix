@@ -67,6 +67,7 @@
 @if ($event->age_rating)
                             <div><dt><x-icon name="user" /> Einlass</dt><dd>{{ $event->age_rating }}</dd></div>
 @endif
+                            <div><dt><x-icon name="users" /> Veranstalter</dt><dd>{{ $event->organizer?->name ?? config('matrix.venue.name') }}</dd></div>
                         </dl>
 
                         <div class="event-actions">
@@ -78,6 +79,8 @@
                             <a class="btn btn-outline" href="{{ route('events.calendar', $event) }}"><x-icon name="calendar" /> In Kalender</a>
                             <button class="btn btn-outline" type="button" data-share data-title="{{ $event->title }}" data-url="{{ route('events.show', $event) }}"><x-icon name="share" /> Teilen</button>
                         </div>
+                        <x-site.social-links class="event-social" :links="$event->social_links" labelled />
+
                     </div>
                 </div>
             </div>

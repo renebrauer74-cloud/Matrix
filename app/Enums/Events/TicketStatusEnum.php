@@ -6,6 +6,7 @@ enum TicketStatusEnum: string
 {
     case Available = 'available';
     case Few = 'few';
+    case AlmostSoldOut = 'almostsoldout';
     case BoxOffice = 'boxoffice';
     case Free = 'free';
     case SoldOut = 'soldout';
@@ -17,6 +18,7 @@ enum TicketStatusEnum: string
         return match ($this) {
             self::Available => 'Tickets erhältlich',
             self::Few => 'Wenige Tickets',
+            self::AlmostSoldOut => 'Fast ausverkauft',
             self::BoxOffice => 'Nur Abendkasse',
             self::Free => 'Eintritt frei',
             self::SoldOut => 'Ausverkauft',
@@ -30,7 +32,7 @@ enum TicketStatusEnum: string
      */
     public function showsRibbon(): bool
     {
-        return in_array($this, [self::Few, self::SoldOut, self::Cancelled, self::Postponed, self::Free], true);
+        return in_array($this, [self::Few, self::AlmostSoldOut, self::SoldOut, self::Cancelled, self::Postponed, self::Free], true);
     }
 
     /**
@@ -38,7 +40,7 @@ enum TicketStatusEnum: string
      */
     public function allowsTicketSale(): bool
     {
-        return in_array($this, [self::Available, self::Few], true);
+        return in_array($this, [self::Available, self::Few, self::AlmostSoldOut], true);
     }
 
     public function isCancelled(): bool

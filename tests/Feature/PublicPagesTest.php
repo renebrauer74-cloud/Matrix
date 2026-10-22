@@ -125,6 +125,18 @@ it('offers tickets only while tickets are available', function () {
         ->assertDontSee('Tickets kaufen');
 });
 
+it('marks almost sold out events and still sells tickets', function () {
+    $event = Event::factory()->create(['ticket_status' => TicketStatusEnum::AlmostSoldOut, 'ticket_url' => 'https://tickets.example.com/x']);
+
+    $this->get(route('events.show', $event))
+        ->assertSee('<span class="ribbon ribbon-almostsoldout">Fast ausverkauft</span>', false)
+        ->assertSee('Tickets kaufen');
+
+    actingAsAdmin()->post(route('admin.events.store'), eventFormData(['ticket_status' => 'almostsoldout']))->assertSessionHasNoErrors();
+
+    expect(Event::query()->latest('id')->first()->ticket_status)->toBe(TicketStatusEnum::AlmostSoldOut);
+});
+
 it('hides drafts from guests but shows them to admins', function () {
     $draft = Event::factory()->draft()->create();
 

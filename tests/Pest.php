@@ -45,6 +45,7 @@ function eventFormData(array $overrides = []): array
         'end_time' => '',
         'rooms' => ['Tube'],
         'room_custom' => '',
+        'organizer' => 'matrix',
         'image_focus' => 'center',
         'ticket_url' => 'https://tickets.example.com/steel',
         'price_presale' => '24 €',
