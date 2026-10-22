@@ -8,6 +8,7 @@ use App\Http\Controllers\CorporateController;
 use App\Http\Controllers\EventController;
 use App\Http\Controllers\HomeController;
 use App\Http\Controllers\JobController;
+use App\Http\Controllers\LocationController;
 use App\Http\Controllers\LostItemController;
 use Illuminate\Support\Facades\Route;
 
@@ -26,7 +27,7 @@ Route::redirect('partys', 'programm/partys');
 Route::get('event/{event:slug}', [EventController::class, 'show'])->name('events.show');
 Route::get('event/{event:slug}/kalender.ics', [EventController::class, 'calendar'])->name('events.calendar');
 
-Route::view('location', 'pages.location')->name('location');
+Route::get('location', [LocationController::class, 'show'])->name('location');
 Route::view('anfahrt', 'pages.directions')->name('directions');
 Route::view('impressum', 'pages.imprint')->name('imprint');
 Route::view('datenschutz', 'pages.privacy')->name('privacy');
@@ -88,6 +89,9 @@ Route::prefix('admin')->name('admin.')->group(function () {
             ->parameters(['stellen' => 'jobPosition'])
             ->names('job-positions');
         Route::post('stellen/{jobPosition}/sichtbarkeit', [Admin\JobPositionController::class, 'toggle'])->name('job-positions.toggle');
+
+        Route::get('location/raeume/{room}', [Admin\RoomController::class, 'edit'])->name('rooms.edit');
+        Route::put('location/raeume/{room}', [Admin\RoomController::class, 'update'])->name('rooms.update');
 
         Route::get('seiten/{page}', [Admin\PageController::class, 'edit'])->name('pages.edit');
         Route::put('seiten/{page}', [Admin\PageController::class, 'update'])->name('pages.update');

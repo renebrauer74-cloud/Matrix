@@ -1,33 +1,38 @@
+@php
+    $content = $page->content;
+    $history = array_values(array_filter($content['history'] ?? [], fn (array $entry): bool => filled($entry['year'] ?? null) || filled($entry['text'] ?? null)));
+@endphp
 <x-layouts.site title="Location">
-    <section class="page-hero page-hero-image">
-        <div class="hero-bg" aria-hidden="true"><img src="{{ asset('assets/img/aussen.jpg') }}" alt=""></div>
-        <div class="container">
-            <p class="eyebrow">Location</p>
-            <h1 class="page-title">Matrix &amp; Rockpalast</h1>
-            <p class="page-lead">Unsere beiden Clubs, Live- &amp; Eventlocations im historischen Müser-Turm in Bochum-Langendreer.</p>
-        </div>
-    </section>
+    <x-site.page-hero-media :page="$page" eyebrow="Location" />
 
     <section class="section">
         <div class="container rooms">
-@foreach (App\Enums\Location\RoomEnum::spaces() as $room)
-            <article @class(['room', 'room-flip' => $loop->even]) id="{{ $room->anchor() }}">
+@foreach ($rooms as $room)
+            <article @class(['room', 'room-flip' => $loop->even]) id="{{ $room->key->anchor() }}">
                 <div class="room-media">
-                    <img src="{{ asset('assets/img/'.$room->image()) }}" alt="{{ $room->value }}" loading="lazy">
+                    <x-room-image :room="$room" :conversion="App\Enums\MediaConversionEnum::Large" />
                 </div>
                 <div class="room-copy">
-                    <p class="eyebrow">Bis zu {{ $room->capacity() }} Personen</p>
-                    <h2 class="section-title">{{ $room->value }}</h2>
-                    <p>{{ $room->description() }}</p>
-                    <ul class="room-facts">
-                        <li><x-icon name="size" /><span>Fläche</span><strong>{{ $room->size() }}</strong></li>
-                        <li><x-icon name="capacity" /><span>Kapazität</span><strong>{{ $room->capacity() }}</strong></li>
-                        <li><x-icon name="bar" /><span>Theken</span><strong>{{ $room->bars() }}</strong></li>
-@if ($room->stage())
-                        <li><x-icon name="stage" /><span>Bühne</span><strong>{{ $room->stage() }}</strong></li>
+@if ($room->capacity)
+                    <p class="eyebrow">Bis zu {{ $room->capacity }} Personen</p>
 @endif
-@if ($room->extra())
-                        <li><x-icon name="star" /><span>Extra</span><strong>{{ $room->extra() }}</strong></li>
+                    <h2 class="section-title">{{ $room->key->value }}</h2>
+@if ($room->description)
+                    <p>{{ $room->description }}</p>
+@endif
+                    <ul class="room-facts">
+@if ($room->size)
+                        <li><x-icon name="size" /><span>Fläche</span><strong>{{ $room->size }}</strong></li>
+@endif
+@if ($room->capacity)
+                        <li><x-icon name="capacity" /><span>Kapazität</span><strong>{{ $room->capacity }}</strong></li>
+@endif
+                        <li><x-icon name="bar" /><span>Theken</span><strong>{{ $room->bars }}</strong></li>
+@if ($room->stage)
+                        <li><x-icon name="stage" /><span>Bühne</span><strong>{{ $room->stage }}</strong></li>
+@endif
+@if ($room->extra)
+                        <li><x-icon name="star" /><span>Extra</span><strong>{{ $room->extra }}</strong></li>
 @endif
                     </ul>
                 </div>
@@ -36,29 +41,31 @@
         </div>
     </section>
 
+@if ($history !== [])
     <section class="section">
         <div class="container narrow">
             <p class="eyebrow">Geschichte</p>
-            <h2 class="section-title">Vom Sudhaus zum Club</h2>
+@if (filled($content['history_title'] ?? null))
+            <h2 class="section-title">{{ $content['history_title'] }}</h2>
+@endif
             <ol class="timeline">
-                <li><strong>1806</strong><p>Johann Wilhelm Müser gründet eine Brauerei, Schankwirtschaft und einen Laden an der Hauptstraße in Langendreer.</p></li>
-                <li><strong>1891</strong><p>Daraus entsteht die Bierbrauerei Gebrüder Müser AG – der Ausbau zur Großbrauerei folgt.</p></li>
-                <li><strong>1928</strong><p>Letzte Erweiterung: das rund 30 Meter hohe Sudhaus – heute das Herz von Rockpalast und Matrix.</p></li>
-                <li><strong>1976</strong><p>Die Schultheiss-Brauerei, seit 1960 Eigentümerin, schließt das traditionsreiche Brauhaus.</p></li>
-                <li><strong>1978</strong><p>Am 1. November eröffnet der Rock Palast im 1. Obergeschoss – schnell eine überregionale Adresse für Rock-Fans.</p></li>
-                <li><strong>1996</strong><p>Ausbau zur mehrräumigen Veranstaltungslocation, seit 1998 unter dem Namen Matrix.</p></li>
-                <li><strong>2014</strong><p>Der Rockpalast wird eigenständige Live- &amp; Eventvenue. Die ehemalige Brauerei wird Station der Route der Industriekultur.</p></li>
+@foreach ($history as $entry)
+                <li><strong>{{ $entry['year'] }}</strong><p>{{ $entry['text'] }}</p></li>
+@endforeach
             </ol>
         </div>
     </section>
+@endif
 
     <section class="section section-tight">
         <div class="container">
             <div class="ticket-band">
                 <div>
                     <p class="eyebrow">Eure Veranstaltung</p>
-                    <h2 class="section-title">Location mieten</h2>
-                    <p>Konzert, Firmenfeier, Hochzeit oder Lesung – sprecht uns an, wir finden den passenden Raum.</p>
+                    <h2 class="section-title">{{ $content['cta_title'] ?: 'Location mieten' }}</h2>
+@if (filled($content['cta_text'] ?? null))
+                    <p>{{ $content['cta_text'] }}</p>
+@endif
                 </div>
                 <div class="ticket-band-actions">
                     <a class="btn btn-accent btn-lg" href="{{ route('corporate') }}#anfrage"><x-icon name="mail" /> Anfrage senden</a>

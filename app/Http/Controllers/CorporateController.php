@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Actions\Location\LoadRoomsAction;
 use App\Actions\Messages\ReceiveMessageAction;
 use App\Actions\Pages\LoadPageAction;
 use App\Enums\Messages\MessageTypeEnum;
@@ -12,10 +13,11 @@ use Illuminate\View\View;
 
 class CorporateController extends Controller
 {
-    public function show(LoadPageAction $loadPage): View
+    public function show(LoadPageAction $loadPage, LoadRoomsAction $loadRooms): View
     {
         return view('pages.corporate', [
             'page' => $loadPage->execute(PageEnum::Corporate),
+            'rooms' => $loadRooms->execute(),
         ]);
     }
 

@@ -3,12 +3,13 @@
 namespace App\Http\Controllers;
 
 use App\Actions\Events\CountUpcomingEventsAction;
+use App\Actions\Location\LoadRoomsAction;
 use App\Models\Event;
 use Illuminate\View\View;
 
 class HomeController extends Controller
 {
-    public function __invoke(CountUpcomingEventsAction $countUpcomingEvents): View
+    public function __invoke(CountUpcomingEventsAction $countUpcomingEvents, LoadRoomsAction $loadRooms): View
     {
         $upcoming = fn () => Event::query()->published()->upcoming()->with('media');
 
@@ -24,6 +25,7 @@ class HomeController extends Controller
                 ->limit(config('matrix.home.events'))
                 ->get(),
             'counts' => $countUpcomingEvents->execute(),
+            'rooms' => $loadRooms->execute(),
         ]);
     }
 }

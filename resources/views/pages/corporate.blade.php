@@ -3,9 +3,10 @@
     use App\Enums\MediaCollectionEnum;
     use App\Enums\MediaConversionEnum;
     use App\Enums\Messages\CorporateEventTypeEnum;
+    use App\Models\Room;
 
     $content = $page->content;
-    $rooms = RoomEnum::spaces();
+    $capacities = $rooms->mapWithKeys(fn (Room $room): array => [$room->key->value => $room->capacity]);
     $gallery = $page->getMedia(MediaCollectionEnum::PageGallery->value);
     $videos = $page->getMedia(MediaCollectionEnum::PageVideos->value);
     $occasions = text_lines($content['occasions'] ?? null);
@@ -19,14 +20,14 @@
             'full' => $media->getUrl(MediaConversionEnum::Large->value),
             'alt' => 'Eindruck aus dem Matrix Bochum',
         ])->all()
-        : array_map(fn (RoomEnum $room): array => [
-            'thumb' => asset('assets/img/'.$room->image()),
-            'full' => asset('assets/img/'.$room->image()),
-            'alt' => $room->value,
-        ], $rooms);
+        : $rooms->map(fn (Room $room): array => [
+            'thumb' => $room->getFirstMediaUrl(MediaCollectionEnum::RoomImage->value, MediaConversionEnum::Medium->value) ?: asset('assets/img/'.$room->key->image()),
+            'full' => $room->getFirstMediaUrl(MediaCollectionEnum::RoomImage->value, MediaConversionEnum::Large->value) ?: asset('assets/img/'.$room->key->image()),
+            'alt' => $room->key->value,
+        ])->all();
     $facts = [
-        ['value' => count($rooms), 'label' => 'Räume & Bühnen'],
-        ['value' => max(array_map(fn (RoomEnum $room): int => (int) $room->capacity(), $rooms)), 'label' => 'Gäste im größten Saal'],
+        ['value' => $rooms->count(), 'label' => 'Räume & Bühnen'],
+        ['value' => (int) $capacities->max(), 'label' => 'Gäste im größten Saal'],
         ['value' => '1928', 'label' => 'historisches Sudhaus'],
         ['value' => '1978', 'label' => 'Livekultur seit'],
     ];
@@ -110,11 +111,11 @@
             </div>
             <div class="room-rail">
 @foreach ($rooms as $room)
-                <a class="room-tile" href="{{ route('location') }}#{{ $room->anchor() }}">
-                    <img src="{{ asset('assets/img/'.$room->image()) }}" alt="{{ $room->value }}" loading="lazy">
+                <a class="room-tile" href="{{ route('location') }}#{{ $room->key->anchor() }}">
+                    <x-room-image :room="$room" />
                     <span class="room-tile-info">
-                        <span class="room-tile-name">{{ $room->value }}</span>
-                        <span class="room-tile-cap"><x-icon name="capacity" /> bis {{ $room->capacity() }} Personen · {{ $room->size() }}</span>
+                        <span class="room-tile-name">{{ $room->key->value }}</span>
+                        <span class="room-tile-cap"><x-icon name="capacity" /> {{ implode(' · ', array_filter([$room->capacity ? 'bis '.$room->capacity.' Personen' : null, $room->size])) }}</span>
                     </span>
                 </a>
 @endforeach
@@ -184,7 +185,7 @@
                         <select id="f-room" name="room">
                             <option value="">Beratet uns gern</option>
 @foreach (RoomEnum::cases() as $room)
-                            <option value="{{ $room->value }}" @selected(old('room') === $room->value)>{{ $room->value }}{{ $room->capacity() ? ' (bis '.$room->capacity().' Personen)' : '' }}</option>
+                            <option value="{{ $room->value }}" @selected(old('room') === $room->value)>{{ $room->value }}{{ ($capacities[$room->value] ?? null) ? ' (bis '.$capacities[$room->value].' Personen)' : '' }}</option>
 @endforeach
                         </select>
                     </x-forms.field>

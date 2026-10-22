@@ -5,9 +5,10 @@ namespace App\Enums\Location;
 use Illuminate\Support\Str;
 
 /**
- * Räume im Müser-Turm – Auswahl im Admin-Formular und Inhalte der Location-Seite.
+ * Räume im Müser-Turm – Auswahl im Admin-Formular und Ausgangswerte der Location-Seite.
  *
  * Der Wert steht als Text in der Liste events.rooms; dort sind auch eigene Orte (z. B. „Biergarten“) erlaubt.
+ * Beschreibung, Fläche, Kapazität usw. werden im Admin-Bereich gepflegt (Tabelle rooms, siehe LoadRoomsAction).
  */
 enum RoomEnum: string
 {
@@ -30,11 +31,39 @@ enum RoomEnum: string
     }
 
     /**
-     * Sprungmarke auf der Location-Seite, z. B. /location#bizarre-club.
+     * Sprungmarke auf der Location-Seite, z. B. /location#bizarre-club – zugleich URL-Teil im Admin-Bereich.
      */
     public function anchor(): string
     {
         return Str::slug($this->value);
+    }
+
+    public static function fromAnchor(string $anchor): ?self
+    {
+        foreach (self::cases() as $room) {
+            if ($room->anchor() === $anchor) {
+                return $room;
+            }
+        }
+
+        return null;
+    }
+
+    /**
+     * Ausgangswerte für die Tabelle rooms, solange im Admin-Bereich nichts gespeichert wurde.
+     *
+     * @return array{description: ?string, size: ?string, capacity: ?int, bars: int, stage: ?string, extra: ?string}
+     */
+    public function defaults(): array
+    {
+        return [
+            'description' => $this->description(),
+            'size' => $this->size(),
+            'capacity' => $this->capacity(),
+            'bars' => $this->bars(),
+            'stage' => $this->stage(),
+            'extra' => $this->extra(),
+        ];
     }
 
     /**
