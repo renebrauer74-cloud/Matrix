@@ -9,6 +9,13 @@ it('renders every public page while the database is empty', function (string $ro
     $this->get(route($routeName))->assertOk();
 })->with(['home', 'events.index', 'location', 'directions', 'jobs', 'corporate', 'contact', 'lost-items', 'imprint', 'privacy']);
 
+it('links the jobs page in the main navigation and marks it active there', function () {
+    $response = $this->get(route('jobs'))->assertOk();
+
+    expect($response->getContent())
+        ->toMatch('~<a href="'.preg_quote(route('jobs'), '~').'"\s+aria-current="page"\s*>Jobs</a>~');
+});
+
 it('renders the category pages of the programme', function (string $slug) {
     $this->get(route('events.index', $slug))->assertOk();
 })->with(['konzerte', 'partys', 'sonstiges']);

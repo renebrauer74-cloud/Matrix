@@ -7,6 +7,7 @@
         ['url' => route('location'), 'label' => 'Location', 'active' => request()->routeIs('location')],
         ['url' => route('corporate'), 'label' => 'Firmen', 'active' => request()->routeIs('corporate')],
         ['url' => route('directions'), 'label' => 'Anfahrt', 'active' => request()->routeIs('directions')],
+        ['url' => route('jobs'), 'label' => 'Jobs', 'active' => request()->routeIs('jobs')],
         ['url' => route('contact'), 'label' => 'Kontakt', 'active' => request()->routeIs('contact')],
     ];
 @endphp

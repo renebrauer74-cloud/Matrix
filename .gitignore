@@ -36,3 +36,5 @@ Thumbs.db
 
 # Zugangsdaten des ersten Admins (nach dem ersten Login löschen)
 /storage/admin-zugang.txt
+
+pr.md
