@@ -19,11 +19,13 @@ class EventController extends Controller
         $rooms = Event::query()
             ->published()
             ->upcoming()
-            ->whereNotNull('room')
-            ->where('room', '<>', '')
-            ->distinct()
-            ->orderBy('room')
-            ->pluck('room');
+            ->whereNotNull('rooms')
+            ->pluck('rooms')
+            ->flatten()
+            ->filter()
+            ->unique()
+            ->sort()
+            ->values();
 
         $room = $rooms->contains($request->query('raum')) ? $request->query('raum') : null;
 
@@ -32,7 +34,7 @@ class EventController extends Controller
             ->upcoming()
             ->with('media')
             ->when($category, fn ($query) => $query->where('category', $category))
-            ->when($room, fn ($query) => $query->where('room', $room))
+            ->when($room, fn ($query) => $query->whereJsonContains('rooms', $room))
             ->orderBy('starts_at')
             ->get();
 

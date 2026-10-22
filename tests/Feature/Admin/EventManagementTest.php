@@ -49,7 +49,7 @@ it('creates an event with slug, image and author', function () {
         ->slug->toBe('steel-und-thunder-2026-11-14')
         ->starts_at->format('Y-m-d H:i:s')->toBe('2026-11-14 20:00:00')
         ->doors_at->toStartWith('19:00')
-        ->room->toBe('Tube')
+        ->rooms->toBe(['Tube'])
         ->created_by->toBe(auth()->id())
         ->and($event->getFirstMedia(MediaCollectionEnum::Events->value))->not->toBeNull();
 });
@@ -81,9 +81,43 @@ it('moves the end after midnight to the next day', function () {
 });
 
 it('saves a custom room', function () {
-    actingAsAdmin()->post(route('admin.events.store'), eventFormData(['room' => '__custom', 'room_custom' => 'Biergarten']));
+    actingAsAdmin()->post(route('admin.events.store'), eventFormData(['rooms' => [], 'room_custom' => 'Biergarten']));
 
-    expect(Event::query()->sole()->room)->toBe('Biergarten');
+    expect(Event::query()->sole()->rooms)->toBe(['Biergarten']);
+});
+
+it('saves several rooms in list order with a custom place at the end', function () {
+    actingAsAdmin()->post(route('admin.events.store'), eventFormData([
+        'rooms' => ['Katakomben', 'Tube', 'Rockpalast'],
+        'room_custom' => 'Biergarten',
+    ]));
+
+    expect(Event::query()->sole()->rooms)->toBe(['Tube', 'Rockpalast', 'Katakomben', 'Biergarten']);
+});
+
+it('saves an event without room', function () {
+    actingAsAdmin()->post(route('admin.events.store'), eventFormData(['rooms' => [], 'room_custom' => '']));
+
+    expect(Event::query()->sole()->rooms)->toBeNull();
+});
+
+it('rejects rooms that are not in the list', function () {
+    actingAsAdmin()
+        ->post(route('admin.events.store'), eventFormData(['rooms' => ['Tube', 'Keller']]))
+        ->assertSessionHasErrors(['rooms.1' => 'Bitte nur Räume aus der Liste auswählen.']);
+
+    expect(Event::query()->count())->toBe(0);
+});
+
+it('preselects the stored rooms in the edit form', function () {
+    $event = Event::factory()->create(['rooms' => ['Tube', 'Katakomben', 'Biergarten']]);
+
+    actingAsAdmin()->get(route('admin.events.edit', $event))
+        ->assertOk()
+        ->assertSee('value="Tube" checked', false)
+        ->assertSee('value="Katakomben" checked', false)
+        ->assertDontSee('value="Rockpalast" checked', false)
+        ->assertSee('value="Biergarten"', false);
 });
 
 it('redirects to a new form when saving and creating another', function () {

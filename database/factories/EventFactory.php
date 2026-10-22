@@ -36,7 +36,7 @@ class EventFactory extends Factory
             'category_label' => fake()->optional()->word(),
             'description' => fake()->paragraphs(2, true),
             'starts_at' => $startsAt,
-            'room' => fake()->randomElement(RoomEnum::cases())->value,
+            'rooms' => [fake()->randomElement(RoomEnum::cases())->value],
             'image_focus' => ImageFocusEnum::Center,
             'ticket_url' => 'https://tickets.example.com/'.Str::random(6),
             'ticket_status' => TicketStatusEnum::Available,

@@ -21,7 +21,7 @@ class BuildEventCalendarAction
         $start = $event->starts_at->copy()->utc();
         $end = ($event->ends_at ?? $event->starts_at->copy()->addHours(self::DEFAULT_CALENDAR_HOURS))->copy()->utc();
 
-        $location = ($event->room ? $event->room.', ' : '').config('matrix.venue.name').', '
+        $location = ($event->rooms ? implode(', ', $event->rooms).', ' : '').config('matrix.venue.name').', '
             .config('matrix.venue.street').', '.config('matrix.venue.zip').' '.config('matrix.venue.city');
 
         $description = trim(($event->subtitle ? $event->subtitle."\n\n" : '').$this->summarize->execute($event, 400));

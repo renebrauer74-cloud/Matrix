@@ -81,16 +81,6 @@
         if (currentCat() === 'sonstiges' && !labelInput.value) labelInput.focus();
     }));
 
-    // Raum "Anderer Ort"
-    const roomSelect = $('[data-room-select]');
-    const roomCustom = $('[data-room-custom]');
-    roomSelect?.addEventListener('change', () => {
-        const custom = roomSelect.value === '__custom';
-        roomCustom.hidden = !custom;
-        if (custom) $('#room_custom').focus();
-        updatePreview();
-    });
-
     // Schnell-Ausfüllen (Ticket-Links)
     $$('[data-fill]').forEach((b) => b.addEventListener('click', () => {
         const input = document.getElementById(b.dataset.fill);
@@ -158,8 +148,8 @@
         $('[data-pv-day]').textContent = d ? String(d.getDate()).padStart(2, '0') : '–';
         $('[data-pv-mon]').textContent = d ? MON[d.getMonth()] : '–';
 
-        let room = roomSelect.value === '__custom' ? val('room_custom') : roomSelect.value;
-        const meta = [val('time') ? val('time') + ' Uhr' : '', room].filter(Boolean).join(' · ');
+        const rooms = $$('[data-room-input]').map((i) => (i.type === 'checkbox' ? (i.checked ? i.value : '') : i.value.trim())).filter(Boolean).join(', ');
+        const meta = [val('time') ? val('time') + ' Uhr' : '', rooms].filter(Boolean).join(' · ');
         $('[data-pv-meta]').textContent = meta;
 
         const ts = val('ticket_status');

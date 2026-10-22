@@ -70,8 +70,8 @@
 @if ($genre)
                     <span class="muted">{{ $genre }}</span>
 @endif
-@if ($event->room)
-                    <span class="muted"><x-icon name="pin" /> {{ $event->room }}</span>
+@if ($event->rooms)
+                    <span class="muted"><x-icon name="pin" /> {{ implode(', ', $event->rooms) }}</span>
 @endif
                 </div>
             </div>

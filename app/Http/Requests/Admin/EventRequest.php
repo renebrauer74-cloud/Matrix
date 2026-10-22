@@ -6,6 +6,7 @@ use App\Enums\Events\EventCategoryEnum;
 use App\Enums\Events\EventStatusEnum;
 use App\Enums\Events\ImageFocusEnum;
 use App\Enums\Events\TicketStatusEnum;
+use App\Enums\Location\RoomEnum;
 use Carbon\CarbonImmutable;
 use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Support\Str;
@@ -13,11 +14,6 @@ use Illuminate\Validation\Rule;
 
 class EventRequest extends AdminFormRequest
 {
-    /**
-     * Auswahlwert im Raum-Feld für einen frei eingegebenen Ort.
-     */
-    public const CUSTOM_ROOM = '__custom';
-
     /**
      * Prepare the data for validation.
      */
@@ -47,7 +43,8 @@ class EventRequest extends AdminFormRequest
             'time' => ['required', 'date_format:H:i'],
             'doors' => ['nullable', 'date_format:H:i'],
             'end_time' => ['nullable', 'date_format:H:i'],
-            'room' => ['nullable', 'string', 'max:80'],
+            'rooms' => ['nullable', 'array'],
+            'rooms.*' => [Rule::enum(RoomEnum::class)],
             'room_custom' => ['nullable', 'string', 'max:80'],
             'image' => $this->imageRules(),
             'remove_image' => ['nullable', 'boolean'],
@@ -75,6 +72,7 @@ class EventRequest extends AdminFormRequest
             'time.*' => 'Bitte gültiges Datum und Uhrzeit angeben.',
             'doors.date_format' => 'Ungültige Uhrzeit beim Einlass.',
             'end_time.date_format' => 'Ungültige Uhrzeit beim Ende.',
+            'rooms.*' => 'Bitte nur Räume aus der Liste auswählen.',
             'ticket_url.url' => 'Bitte einen gültigen Link angeben.',
             'image.image' => 'Bitte ein JPG-, PNG-, WebP-, GIF- oder AVIF-Bild hochladen.',
             'image.mimes' => 'Bitte ein JPG-, PNG-, WebP-, GIF- oder AVIF-Bild hochladen.',
@@ -102,7 +100,7 @@ class EventRequest extends AdminFormRequest
             'starts_at' => $startsAt,
             'doors_at' => $this->input('doors'),
             'ends_at' => $this->endsAt($startsAt),
-            'room' => $this->input('room') === self::CUSTOM_ROOM ? $this->input('room_custom') : $this->input('room'),
+            'rooms' => $this->rooms(),
             'image_focus' => $this->enum('image_focus', ImageFocusEnum::class) ?? ImageFocusEnum::Center,
             'ticket_url' => $this->input('ticket_url'),
             'price_presale' => $this->input('price_presale'),
@@ -112,6 +110,24 @@ class EventRequest extends AdminFormRequest
             'status' => $this->enum('status', EventStatusEnum::class),
             'is_featured' => $this->boolean('is_featured'),
         ];
+    }
+
+    /**
+     * Angehakte Räume in der Reihenfolge der Auswahl, ein frei eingegebener Ort hinten dran.
+     *
+     * @return list<string>|null
+     */
+    private function rooms(): ?array
+    {
+        $rooms = array_filter(RoomEnum::cases(), fn (RoomEnum $room): bool => in_array($room->value, (array) $this->input('rooms', []), true));
+        $rooms = array_map(fn (RoomEnum $room): string => $room->value, $rooms);
+        $custom = trim((string) $this->input('room_custom'));
+
+        if ($custom !== '' && ! in_array($custom, $rooms, true)) {
+            $rooms[] = $custom;
+        }
+
+        return $rooms === [] ? null : array_values($rooms);
     }
 
     /**

@@ -7,7 +7,7 @@ use Illuminate\Support\Str;
 /**
  * Räume im Müser-Turm – Auswahl im Admin-Formular und Inhalte der Location-Seite.
  *
- * Der Wert steht als Text in events.room; dort sind auch eigene Orte (z. B. „Biergarten“) erlaubt.
+ * Der Wert steht als Text in der Liste events.rooms; dort sind auch eigene Orte (z. B. „Biergarten“) erlaubt.
  */
 enum RoomEnum: string
 {
