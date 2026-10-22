@@ -1,7 +1,6 @@
 @inject('describeBadge', 'App\Actions\Events\DescribeEventBadgeAction')
 @php
     use App\Enums\Events\EventCategoryEnum;
-    use App\Enums\Location\RoomEnum;
     use App\Enums\MediaCollectionEnum;
     use App\Enums\MediaConversionEnum;
 
@@ -171,12 +170,14 @@
                 <a class="link-arrow hide-sm" href="{{ route('location') }}">Alle Räume <x-icon name="arrow-right" /></a>
             </div>
             <div class="room-rail">
-@foreach (RoomEnum::spaces() as $room)
-                <a class="room-tile" href="{{ route('location') }}#{{ $room->anchor() }}">
-                    <img src="{{ asset('assets/img/'.$room->image()) }}" alt="{{ $room->value }}" loading="lazy">
+@foreach ($rooms as $room)
+                <a class="room-tile" href="{{ route('location') }}#{{ $room->key->anchor() }}">
+                    <x-room-image :room="$room" />
                     <span class="room-tile-info">
-                        <span class="room-tile-name">{{ $room->value }}</span>
-                        <span class="room-tile-cap"><x-icon name="capacity" /> bis {{ $room->capacity() }} Personen</span>
+                        <span class="room-tile-name">{{ $room->key->value }}</span>
+@if ($room->capacity)
+                        <span class="room-tile-cap"><x-icon name="capacity" /> bis {{ $room->capacity }} Personen</span>
+@endif
                     </span>
                 </a>
 @endforeach

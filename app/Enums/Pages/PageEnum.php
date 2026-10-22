@@ -13,6 +13,7 @@ enum PageEnum: string
 {
     case Jobs = 'jobs';
     case Corporate = 'firmen';
+    case Location = 'location';
     case Social = 'social-media';
 
     public function label(): string
@@ -20,6 +21,7 @@ enum PageEnum: string
         return match ($this) {
             self::Jobs => 'Jobs-Seite',
             self::Corporate => 'Firmenseite',
+            self::Location => 'Location-Seite',
             self::Social => 'Social Media',
         };
     }
@@ -32,6 +34,7 @@ enum PageEnum: string
         return match ($this) {
             self::Jobs => 'jobs',
             self::Corporate => 'corporate',
+            self::Location => 'location',
             self::Social => 'home',
         };
     }
@@ -71,6 +74,22 @@ enum PageEnum: string
                 'contact_name' => 'Event-Team Matrix',
                 'contact_phone' => config('matrix.venue.phone'),
                 'contact_email' => config('matrix.venue.email'),
+            ],
+            self::Location => [
+                'hero_title' => 'Matrix & Rockpalast',
+                'hero_lead' => 'Unsere beiden Clubs, Live- & Eventlocations im historischen Müser-Turm in Bochum-Langendreer.',
+                'history_title' => 'Vom Sudhaus zum Club',
+                'history' => [
+                    ['year' => '1806', 'text' => 'Johann Wilhelm Müser gründet eine Brauerei, Schankwirtschaft und einen Laden an der Hauptstraße in Langendreer.'],
+                    ['year' => '1891', 'text' => 'Daraus entsteht die Bierbrauerei Gebrüder Müser AG – der Ausbau zur Großbrauerei folgt.'],
+                    ['year' => '1928', 'text' => 'Letzte Erweiterung: das rund 30 Meter hohe Sudhaus – heute das Herz von Rockpalast und Matrix.'],
+                    ['year' => '1976', 'text' => 'Die Schultheiss-Brauerei, seit 1960 Eigentümerin, schließt das traditionsreiche Brauhaus.'],
+                    ['year' => '1978', 'text' => 'Am 1. November eröffnet der Rock Palast im 1. Obergeschoss – schnell eine überregionale Adresse für Rock-Fans.'],
+                    ['year' => '1996', 'text' => 'Ausbau zur mehrräumigen Veranstaltungslocation, seit 1998 unter dem Namen Matrix.'],
+                    ['year' => '2014', 'text' => 'Der Rockpalast wird eigenständige Live- & Eventvenue. Die ehemalige Brauerei wird Station der Route der Industriekultur.'],
+                ],
+                'cta_title' => 'Location mieten',
+                'cta_text' => 'Konzert, Firmenfeier, Hochzeit oder Lesung – sprecht uns an, wir finden den passenden Raum.',
             ],
             self::Social => [
                 'social_links' => array_values(array_filter([

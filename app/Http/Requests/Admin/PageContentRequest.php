@@ -16,6 +16,11 @@ class PageContentRequest extends AdminFormRequest
     public const HIGHLIGHT_SLOTS = 6;
 
     /**
+     * Anzahl der Einträge in der Zeitleiste „Geschichte“ auf der Location-Seite.
+     */
+    public const HISTORY_SLOTS = 12;
+
+    /**
      * Prepare the data for validation.
      */
     protected function prepareForValidation(): void
@@ -59,6 +64,15 @@ class PageContentRequest extends AdminFormRequest
                 'contact_phone' => ['nullable', 'string', 'max:60'],
                 'contact_email' => ['nullable', 'email', 'max:190'],
             ],
+            PageEnum::Location => [
+                ...$shared,
+                'history_title' => ['nullable', 'string', 'max:120'],
+                'history' => ['nullable', 'array', 'max:'.self::HISTORY_SLOTS],
+                'history.*.year' => ['nullable', 'string', 'max:20'],
+                'history.*.text' => ['nullable', 'string', 'max:400'],
+                'cta_title' => ['nullable', 'string', 'max:120'],
+                'cta_text' => ['nullable', 'string', 'max:400'],
+            ],
             PageEnum::Social => $this->socialLinkRules(),
         };
     }
@@ -95,6 +109,17 @@ class PageContentRequest extends AdminFormRequest
         $content = collect($this->validated())
             ->except(['hero_image', 'remove_hero_image', 'hero_video', 'remove_hero_video'])
             ->all();
+
+        if ($this->page() === PageEnum::Location) {
+            $content['history'] = collect($this->input('history', []))
+                ->map(fn (array $entry): array => [
+                    'year' => trim((string) ($entry['year'] ?? '')),
+                    'text' => trim((string) ($entry['text'] ?? '')),
+                ])
+                ->filter(fn (array $entry): bool => $entry['year'] !== '' || $entry['text'] !== '')
+                ->values()
+                ->all();
+        }
 
         if ($this->page() === PageEnum::Corporate) {
             $content['highlights'] = collect($this->input('highlights', []))

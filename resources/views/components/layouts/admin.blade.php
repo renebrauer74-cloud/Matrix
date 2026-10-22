@@ -10,6 +10,7 @@
         ['url' => route('admin.organizers.index'), 'active' => request()->routeIs('admin.organizers.*'), 'label' => 'Veranstalter', 'icon' => 'stage'],
         ['url' => route('admin.messages.index'), 'active' => request()->routeIs('admin.messages.*'), 'label' => 'Nachrichten', 'icon' => 'mail', 'badge' => $countUnreadMessages->execute()],
         ['url' => route('admin.job-positions.index'), 'active' => request()->routeIs('admin.job-positions.*') || $editedPage === PageEnum::Jobs, 'label' => 'Jobs', 'icon' => 'bar'],
+        ['url' => route('admin.pages.edit', PageEnum::Location), 'active' => $editedPage === PageEnum::Location || request()->routeIs('admin.rooms.*'), 'label' => 'Location', 'icon' => 'pin'],
         ['url' => route('admin.pages.edit', PageEnum::Corporate), 'active' => $editedPage === PageEnum::Corporate, 'label' => 'Firmenseite', 'icon' => 'capacity'],
         ['url' => route('admin.pages.edit', PageEnum::Social), 'active' => $editedPage === PageEnum::Social, 'label' => 'Social Media', 'icon' => 'instagram'],
         ['url' => route('admin.users.index'), 'active' => request()->routeIs('admin.users.*'), 'label' => 'Benutzer', 'icon' => 'users'],

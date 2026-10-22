@@ -21,6 +21,9 @@ enum MediaCollectionEnum: string
     /** Videos einer gepflegten Seite */
     case PageVideos = 'page-videos';
 
+    /** Foto eines Raums auf Location-, Start- und Firmenseite */
+    case RoomImage = 'room-images';
+
     /** Anhänge aus den Website-Formularen (Lebenslauf, Foto einer Fundsache) – private Disk */
     case MessageAttachments = 'message-attachments';
 
