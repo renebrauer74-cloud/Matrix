@@ -76,6 +76,20 @@ if (! function_exists('text_lines')) {
     }
 }
 
+if (! function_exists('versioned_asset')) {
+    /**
+     * URL einer Datei unter public/ mit Änderungszeit als Version, z. B. „…/admin.js?v=1792667983“.
+     *
+     * So laden Browser nach jeder Änderung an CSS oder JavaScript sofort die neue Datei statt einer zwischengespeicherten.
+     */
+    function versioned_asset(string $path): string
+    {
+        $file = public_path($path);
+
+        return asset($path).(is_file($file) ? '?v='.filemtime($file) : '');
+    }
+}
+
 if (! function_exists('phone_link')) {
     /**
      * Telefonnummer für tel:-Links, z. B. „0234292102“.

@@ -16,6 +16,19 @@ it('links the jobs page in the main navigation and marks it active there', funct
         ->toMatch('~<a href="'.preg_quote(route('jobs'), '~').'"\s+aria-current="page"\s*>Jobs</a>~');
 });
 
+it('loads styles, scripts and icons with a version so browsers fetch changed files', function () {
+    $version = fn (string $path): string => $path.'?v='.filemtime(public_path($path));
+
+    $this->get(route('home'))
+        ->assertSee($version('assets/css/site.css'), false)
+        ->assertSee($version('assets/js/site.js'), false)
+        ->assertSee($version('assets/img/icons.svg').'#', false);
+
+    actingAsAdmin()->get(route('admin.dashboard'))
+        ->assertSee($version('assets/css/admin.css'), false)
+        ->assertSee($version('assets/js/admin.js'), false);
+});
+
 it('renders the category pages of the programme', function (string $slug) {
     $this->get(route('events.index', $slug))->assertOk();
 })->with(['konzerte', 'partys', 'sonstiges']);

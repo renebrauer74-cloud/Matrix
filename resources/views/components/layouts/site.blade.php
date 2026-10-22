@@ -24,8 +24,8 @@
 @endif
     <link rel="icon" type="image/png" href="{{ asset('assets/img/favicon.png') }}">
     <link rel="preload" href="{{ asset('assets/fonts/anton-latin.woff2') }}" as="font" type="font/woff2" crossorigin>
-    <link rel="stylesheet" href="{{ asset('assets/css/site.css') }}">
-    <script src="{{ asset('assets/js/site.js') }}" defer></script>
+    <link rel="stylesheet" href="{{ versioned_asset('assets/css/site.css') }}">
+    <script src="{{ versioned_asset('assets/js/site.js') }}" defer></script>
 </head>
 <body>
     <a class="skip-link" href="#main">Zum Inhalt springen</a>

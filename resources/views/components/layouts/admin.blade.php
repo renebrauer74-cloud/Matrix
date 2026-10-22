@@ -28,8 +28,8 @@
     <meta name="robots" content="noindex, nofollow">
     <title>{{ $title }} – Matrix Admin</title>
     <link rel="icon" type="image/png" href="{{ asset('assets/img/favicon.png') }}">
-    <link rel="stylesheet" href="{{ asset('assets/css/admin.css') }}">
-    <script src="{{ asset('assets/js/admin.js') }}" defer></script>
+    <link rel="stylesheet" href="{{ versioned_asset('assets/css/admin.css') }}">
+    <script src="{{ versioned_asset('assets/js/admin.js') }}" defer></script>
 </head>
 <body class="admin-body">
     <aside class="sidebar" id="sidebar">
