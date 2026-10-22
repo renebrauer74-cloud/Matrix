@@ -78,6 +78,11 @@ Route::prefix('admin')->name('admin.')->group(function () {
         Route::get('nachrichten/{message}/anhang/{media}', [Admin\MessageController::class, 'attachment'])->whereNumber('media')->name('messages.attachment');
         Route::post('nachrichten/{message}/antworten', [Admin\MessageReplyController::class, 'store'])->name('messages.replies.store');
 
+        Route::resource('veranstalter', Admin\OrganizerController::class)
+            ->except('show')
+            ->parameters(['veranstalter' => 'organizer'])
+            ->names('organizers');
+
         Route::resource('stellen', Admin\JobPositionController::class)
             ->except('show')
             ->parameters(['stellen' => 'jobPosition'])

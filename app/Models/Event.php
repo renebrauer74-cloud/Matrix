@@ -25,8 +25,8 @@ use Spatie\MediaLibrary\MediaCollections\Models\Media;
  */
 #[Fillable([
     'title', 'slug', 'subtitle', 'category', 'category_label', 'description',
-    'starts_at', 'doors_at', 'ends_at', 'rooms', 'image_focus',
-    'ticket_url', 'price_presale', 'price_box', 'age_rating',
+    'starts_at', 'doors_at', 'ends_at', 'rooms', 'organizer_id', 'image_focus',
+    'ticket_url', 'social_links', 'price_presale', 'price_box', 'age_rating',
     'ticket_status', 'status', 'is_featured', 'created_by',
 ])]
 class Event extends Model implements HasMedia
@@ -51,6 +51,7 @@ class Event extends Model implements HasMedia
             'starts_at' => 'datetime',
             'ends_at' => 'datetime',
             'rooms' => 'array',
+            'social_links' => 'array',
             'image_focus' => ImageFocusEnum::class,
             'ticket_status' => TicketStatusEnum::class,
             'status' => EventStatusEnum::class,
@@ -82,6 +83,16 @@ class Event extends Model implements HasMedia
     public function creator(): BelongsTo
     {
         return $this->belongsTo(User::class, 'created_by');
+    }
+
+    /**
+     * Externer Veranstalter – ohne Eintrag veranstaltet die Matrix selbst.
+     *
+     * @return BelongsTo<Organizer, $this>
+     */
+    public function organizer(): BelongsTo
+    {
+        return $this->belongsTo(Organizer::class);
     }
 
     /**

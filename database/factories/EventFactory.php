@@ -9,6 +9,7 @@ use App\Enums\Events\TicketStatusEnum;
 use App\Enums\Location\RoomEnum;
 use App\Enums\MediaCollectionEnum;
 use App\Models\Event;
+use App\Models\Organizer;
 use Illuminate\Database\Eloquent\Factories\Factory;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Str;
@@ -58,6 +59,11 @@ class EventFactory extends Factory
     public function featured(): static
     {
         return $this->state(fn (array $attributes) => ['is_featured' => true]);
+    }
+
+    public function external(): static
+    {
+        return $this->state(fn (array $attributes) => ['organizer_id' => Organizer::factory()]);
     }
 
     public function past(): static

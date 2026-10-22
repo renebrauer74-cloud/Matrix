@@ -3,6 +3,7 @@
 namespace App\Http\Requests\Admin;
 
 use App\Enums\Events\EventCategoryEnum;
+use App\Enums\Events\EventOrganizerEnum;
 use App\Enums\Events\EventStatusEnum;
 use App\Enums\Events\ImageFocusEnum;
 use App\Enums\Events\TicketStatusEnum;
@@ -24,6 +25,14 @@ class EventRequest extends AdminFormRequest
         if ($ticketUrl !== '' && ! preg_match('#^https?://#i', $ticketUrl)) {
             $this->merge(['ticket_url' => 'https://'.$ticketUrl]);
         }
+
+        $organizerWebsite = trim((string) $this->input('organizer_website'));
+
+        if ($organizerWebsite !== '' && ! preg_match('#^https?://#i', $organizerWebsite)) {
+            $this->merge(['organizer_website' => 'https://'.$organizerWebsite]);
+        }
+
+        $this->prepareSocialLinks();
     }
 
     /**
@@ -46,6 +55,19 @@ class EventRequest extends AdminFormRequest
             'rooms' => ['nullable', 'array'],
             'rooms.*' => [Rule::enum(RoomEnum::class)],
             'room_custom' => ['nullable', 'string', 'max:80'],
+            'organizer' => ['required', Rule::enum(EventOrganizerEnum::class)],
+            ...array_map(fn (array $rules): array => ['exclude_unless:organizer,'.EventOrganizerEnum::External->value, ...$rules], [
+                'organizer_id' => ['nullable', 'integer', Rule::exists('organizers', 'id')],
+                'organizer_name' => ['required', 'string', 'max:150'],
+                'organizer_contact_person' => ['nullable', 'string', 'max:120'],
+                'organizer_street' => ['nullable', 'string', 'max:150'],
+                'organizer_zip' => ['nullable', 'string', 'max:10'],
+                'organizer_city' => ['nullable', 'string', 'max:100'],
+                'organizer_phone' => ['nullable', 'string', 'max:60'],
+                'organizer_email' => ['nullable', 'email', 'max:190'],
+                'organizer_website' => ['nullable', 'url:http,https', 'max:500'],
+            ]),
+            ...$this->socialLinkRules(),
             'image' => $this->imageRules(),
             'remove_image' => ['nullable', 'boolean'],
             'image_focus' => ['nullable', Rule::enum(ImageFocusEnum::class)],
@@ -73,6 +95,10 @@ class EventRequest extends AdminFormRequest
             'doors.date_format' => 'Ungültige Uhrzeit beim Einlass.',
             'end_time.date_format' => 'Ungültige Uhrzeit beim Ende.',
             'rooms.*' => 'Bitte nur Räume aus der Liste auswählen.',
+            'organizer_name.required' => 'Bitte den Namen des Veranstalters eingeben.',
+            'organizer_email.email' => 'Bitte eine gültige E-Mail-Adresse angeben.',
+            'organizer_website.url' => 'Bitte einen gültigen Link angeben.',
+            ...$this->socialLinkMessages(),
             'ticket_url.url' => 'Bitte einen gültigen Link angeben.',
             'image.image' => 'Bitte ein JPG-, PNG-, WebP-, GIF- oder AVIF-Bild hochladen.',
             'image.mimes' => 'Bitte ein JPG-, PNG-, WebP-, GIF- oder AVIF-Bild hochladen.',
@@ -103,6 +129,7 @@ class EventRequest extends AdminFormRequest
             'rooms' => $this->rooms(),
             'image_focus' => $this->enum('image_focus', ImageFocusEnum::class) ?? ImageFocusEnum::Center,
             'ticket_url' => $this->input('ticket_url'),
+            'social_links' => $this->socialLinks() ?: null,
             'price_presale' => $this->input('price_presale'),
             'price_box' => $this->input('price_box'),
             'age_rating' => $this->input('age_rating'),
@@ -110,6 +137,35 @@ class EventRequest extends AdminFormRequest
             'status' => $this->enum('status', EventStatusEnum::class),
             'is_featured' => $this->boolean('is_featured'),
         ];
+    }
+
+    public function isExternal(): bool
+    {
+        return $this->input('organizer') === EventOrganizerEnum::External->value;
+    }
+
+    /**
+     * Gewählter Veranstalter aus den Stammdaten – leer bei „Neuer Veranstalter“.
+     */
+    public function organizerId(): ?int
+    {
+        return $this->isExternal() && filled($this->input('organizer_id')) ? (int) $this->input('organizer_id') : null;
+    }
+
+    /**
+     * Stammdaten des externen Veranstalters für die Tabelle organizers – null, wenn die Matrix veranstaltet.
+     *
+     * @return array<string, string|null>|null
+     */
+    public function organizerAttributes(): ?array
+    {
+        if (! $this->isExternal()) {
+            return null;
+        }
+
+        $fields = ['name', 'contact_person', 'street', 'zip', 'city', 'phone', 'email', 'website'];
+
+        return array_combine($fields, array_map(fn (string $field): ?string => $this->input('organizer_'.$field), $fields));
     }
 
     /**

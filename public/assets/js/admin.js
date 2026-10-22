@@ -49,6 +49,44 @@
         });
     });
 
+    // --- Social-Media-Links: Zeilen hinzufügen und entfernen -----------------------------
+    const PLATFORM_HOSTS = { instagram: 'instagram.com', facebook: 'facebook.com', tiktok: 'tiktok.com', youtube: 'youtube.com' };
+    const initSocialRow = (row) => {
+        const select = row.querySelector('[data-social-platform]');
+        const url = row.querySelector('[data-social-url]');
+        const setPlaceholder = () => { url.placeholder = select.selectedOptions[0]?.dataset.placeholder || ''; };
+        select.addEventListener('change', setPlaceholder);
+        // Eingefügten Link der passenden Plattform zuordnen
+        url.addEventListener('input', () => {
+            const host = url.value.toLowerCase();
+            const match = Object.keys(PLATFORM_HOSTS).find((p) => host.includes(PLATFORM_HOSTS[p]) || (p === 'youtube' && host.includes('youtu.be')) || (p === 'facebook' && host.includes('fb.com')));
+            if (match && select.value !== match) { select.value = match; setPlaceholder(); }
+        });
+    };
+    $$('[data-social-links]').forEach((box) => {
+        const rows = box.querySelector('[data-social-rows]');
+        const empty = box.querySelector('[data-social-empty]');
+        const template = box.querySelector('[data-social-template]');
+        let next = Number(box.dataset.nextIndex) || 0;
+        const refresh = () => { empty.hidden = rows.children.length > 0; };
+        rows.querySelectorAll('[data-social-row]').forEach(initSocialRow);
+        box.querySelector('[data-social-add]').addEventListener('click', () => {
+            const html = template.innerHTML.replaceAll('__INDEX__', String(next++));
+            rows.insertAdjacentHTML('beforeend', html);
+            const row = rows.lastElementChild;
+            initSocialRow(row);
+            row.querySelector('[data-social-url]').focus();
+            refresh();
+        });
+        rows.addEventListener('click', (e) => {
+            const remove = e.target.closest('[data-social-remove]');
+            if (!remove) return;
+            remove.closest('[data-social-row]').remove();
+            refresh();
+            rows.closest('form')?.dispatchEvent(new Event('change'));
+        });
+    });
+
     // --- Event-Formular ----------------------------------------------------------------
     const form = $('[data-event-form]');
     if (!form) return;
@@ -56,7 +94,7 @@
     const WD = ['So', 'Mo', 'Di', 'Mi', 'Do', 'Fr', 'Sa'];
     const MON = ['Jan', 'Feb', 'Mär', 'Apr', 'Mai', 'Jun', 'Jul', 'Aug', 'Sep', 'Okt', 'Nov', 'Dez'];
     const CAT = { konzert: 'Konzert', party: 'Party', sonstiges: 'Sonstiges' };
-    const RIBBON = { few: 'Wenige Tickets', soldout: 'Ausverkauft', cancelled: 'Abgesagt', postponed: 'Verlegt', free: 'Eintritt frei' };
+    const RIBBON = { few: 'Wenige Tickets', almostsoldout: 'Fast ausverkauft', soldout: 'Ausverkauft', cancelled: 'Abgesagt', postponed: 'Verlegt', free: 'Eintritt frei' };
 
     const pv = $('[data-pv]');
     const labelField = $('[data-label-field]');
@@ -80,6 +118,25 @@
         updateCategory();
         if (currentCat() === 'sonstiges' && !labelInput.value) labelInput.focus();
     }));
+
+    // Veranstalter: Matrix oder extern – bei extern Stammdaten anzeigen
+    const organizerFields = $('[data-organizer-fields]');
+    const organizerSelect = $('[data-organizer-select]');
+    const updateOrganizer = () => {
+        const external = ($('input[name="organizer"]:checked') || {}).value === 'external';
+        organizerFields.hidden = !external;
+    };
+    $$('input[name="organizer"]').forEach((r) => r.addEventListener('change', () => {
+        updateOrganizer();
+        if (!organizerFields.hidden) (organizerSelect?.value ? organizerSelect : $('#organizer_name')).focus();
+    }));
+    // Gespeicherten Veranstalter gewählt: Stammdaten eintragen, „Neuer Veranstalter“: Felder leeren
+    organizerSelect?.addEventListener('change', () => {
+        const data = JSON.parse(organizerSelect.selectedOptions[0]?.dataset.organizer || '{}');
+        $$('[data-organizer-field]').forEach((input) => { input.value = data[input.dataset.organizerField] || ''; });
+        if (!organizerSelect.value) $('#organizer_name').focus();
+    });
+    if (organizerFields) updateOrganizer();
 
     // Schnell-Ausfüllen (Ticket-Links)
     $$('[data-fill]').forEach((b) => b.addEventListener('click', () => {

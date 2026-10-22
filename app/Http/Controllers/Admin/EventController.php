@@ -11,6 +11,7 @@ use App\Enums\Events\EventStatusEnum;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Admin\EventRequest;
 use App\Models\Event;
+use App\Models\Organizer;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
@@ -36,12 +37,13 @@ class EventController extends Controller
         return view('admin.events.form', [
             'event' => null,
             'presetCategory' => $request->enum('art', EventCategoryEnum::class) ?? EventCategoryEnum::Konzert,
+            'organizers' => Organizer::query()->orderBy('name')->get(),
         ]);
     }
 
     public function store(EventRequest $request, SaveEventAction $saveEvent): RedirectResponse
     {
-        $event = $saveEvent->execute(new Event, $request->eventAttributes(), $request->file('image'), false, $request->user());
+        $event = $saveEvent->execute(new Event, $request->eventAttributes(), $request->organizerAttributes(), $request->organizerId(), $request->file('image'), false, $request->user());
 
         return $this->afterSave($request, $event)->with('success', '„'.$event->title.'“ wurde '
             .($event->isDraft() ? 'als Entwurf gespeichert.' : 'veröffentlicht.'));
@@ -52,12 +54,13 @@ class EventController extends Controller
         return view('admin.events.form', [
             'event' => $event,
             'presetCategory' => $event->category,
+            'organizers' => Organizer::query()->orderBy('name')->get(),
         ]);
     }
 
     public function update(EventRequest $request, Event $event, SaveEventAction $saveEvent): RedirectResponse
     {
-        $saveEvent->execute($event, $request->eventAttributes(), $request->file('image'), $request->boolean('remove_image'), $request->user());
+        $saveEvent->execute($event, $request->eventAttributes(), $request->organizerAttributes(), $request->organizerId(), $request->file('image'), $request->boolean('remove_image'), $request->user());
 
         return $this->afterSave($request, $event)->with('success', 'Änderungen an „'.$event->title.'“ gespeichert.');
     }

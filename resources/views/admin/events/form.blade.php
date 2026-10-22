@@ -1,5 +1,6 @@
 @php
     use App\Enums\Events\EventCategoryEnum;
+    use App\Enums\Events\EventOrganizerEnum;
     use App\Enums\Events\EventStatusEnum;
     use App\Enums\Events\ImageFocusEnum;
     use App\Enums\Events\TicketStatusEnum;
@@ -15,6 +16,9 @@
     $storedRooms = $event?->rooms ?? [];
     $selectedRooms = (array) old('rooms', array_intersect($storedRooms, $roomNames));
     $roomCustom = old('room_custom', implode(', ', array_diff($storedRooms, $roomNames)));
+    $organizer = $event?->organizer;
+    $organizerMode = old('organizer', $organizer ? EventOrganizerEnum::External->value : EventOrganizerEnum::Matrix->value);
+    $organizerId = (string) old('organizer_id', $organizer?->getKey());
     $imageUrl = $event?->getFirstMediaUrl(MediaCollectionEnum::Events->value, MediaConversionEnum::Medium->value) ?: null;
     $status = old('status', $event?->status->value ?? EventStatusEnum::Published->value);
     $featured = (bool) old('is_featured', $event?->is_featured ?? false);
@@ -135,9 +139,37 @@
                 </div>
             </section>
 
+            {{-- Veranstalter --}}
+            <section class="panel form-section">
+                <h2 class="form-section-title"><span>4</span> Veranstalter</h2>
+                <div class="segmented segmented-full organizer-toggle" role="radiogroup" aria-label="Wer veranstaltet?">
+@foreach (EventOrganizerEnum::cases() as $option)
+                    <label><input type="radio" name="organizer" value="{{ $option->value }}" @checked($organizerMode === $option->value)><span><x-icon :name="$option === EventOrganizerEnum::Matrix ? 'star' : 'users'" /> {{ $option->label() }}</span></label>
+@endforeach
+                </div>
+                <x-admin.field-error name="organizer" />
+
+                <div class="organizer-fields" data-organizer-fields @if ($organizerMode !== EventOrganizerEnum::External->value) hidden @endif>
+@if ($organizers->isNotEmpty())
+                    <div class="field{{ $hasError('organizer_id') }}">
+                        <label for="organizer_id">Gespeicherte Veranstalter</label>
+                        <select id="organizer_id" name="organizer_id" data-organizer-select>
+                            <option value="">+ Neuer Veranstalter</option>
+@foreach ($organizers as $option)
+                            <option value="{{ $option->getKey() }}" data-organizer="{{ json_encode($option->only($option->getFillable())) }}" @selected($organizerId === (string) $option->getKey())>{{ $option->name }}{{ $option->city ? ' · '.$option->city : '' }}</option>
+@endforeach
+                        </select>
+                        <x-admin.field-error name="organizer_id" />
+                        <p class="hint">Änderungen an den Stammdaten gelten für alle Veranstaltungen dieses Veranstalters · <a class="link" href="{{ route('admin.organizers.index') }}" target="_blank" rel="noopener">Alle Veranstalter verwalten</a></p>
+                    </div>
+@endif
+                    <x-admin.organizer-fields :organizer="$organizer" prefix="organizer_" />
+                </div>
+            </section>
+
             {{-- Bild --}}
             <section class="panel form-section">
-                <h2 class="form-section-title"><span>4</span> Bild / Flyer</h2>
+                <h2 class="form-section-title"><span>5</span> Bild / Flyer</h2>
                 <div class="dropzone{{ $imageUrl ? ' has-image' : '' }}{{ $hasError('image') }}" data-dropzone>
                     <img class="dropzone-preview" src="{{ $imageUrl }}" alt="" data-dropzone-img @unless ($imageUrl) hidden @endunless>
                     <div class="dropzone-empty">
@@ -165,7 +197,7 @@
 
             {{-- Tickets --}}
             <section class="panel form-section">
-                <h2 class="form-section-title"><span>5</span> Tickets &amp; Einlass</h2>
+                <h2 class="form-section-title"><span>6</span> Tickets &amp; Einlass</h2>
                 <div class="field{{ $hasError('ticket_url') }}">
                     <label for="ticket_url">Ticket-Link</label>
                     <input id="ticket_url" name="ticket_url" type="url" inputmode="url" maxlength="500" value="{{ old('ticket_url', $event?->ticket_url) }}" placeholder="https://…">
@@ -202,6 +234,13 @@
 @endforeach
                     </select>
                 </div>
+            </section>
+
+            {{-- Social Media --}}
+            <section class="panel form-section">
+                <h2 class="form-section-title"><span>7</span> Social Media</h2>
+                <p class="hint social-intro">Links zu Künstlern, Bands oder Veranstaltern – dieselbe Plattform darf mehrfach vorkommen.</p>
+                <x-admin.social-links-field :links="$event?->social_links ?? []" />
             </section>
         </div>
 

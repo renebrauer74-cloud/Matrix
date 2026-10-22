@@ -7,9 +7,11 @@
     $nav = [
         ['url' => route('admin.dashboard'), 'active' => request()->routeIs('admin.dashboard'), 'label' => 'Dashboard', 'icon' => 'dashboard'],
         ['url' => route('admin.events.index'), 'active' => request()->routeIs('admin.events.*'), 'label' => 'Veranstaltungen', 'icon' => 'calendar'],
+        ['url' => route('admin.organizers.index'), 'active' => request()->routeIs('admin.organizers.*'), 'label' => 'Veranstalter', 'icon' => 'stage'],
         ['url' => route('admin.messages.index'), 'active' => request()->routeIs('admin.messages.*'), 'label' => 'Nachrichten', 'icon' => 'mail', 'badge' => $countUnreadMessages->execute()],
         ['url' => route('admin.job-positions.index'), 'active' => request()->routeIs('admin.job-positions.*') || $editedPage === PageEnum::Jobs, 'label' => 'Jobs', 'icon' => 'bar'],
         ['url' => route('admin.pages.edit', PageEnum::Corporate), 'active' => $editedPage === PageEnum::Corporate, 'label' => 'Firmenseite', 'icon' => 'capacity'],
+        ['url' => route('admin.pages.edit', PageEnum::Social), 'active' => $editedPage === PageEnum::Social, 'label' => 'Social Media', 'icon' => 'instagram'],
         ['url' => route('admin.users.index'), 'active' => request()->routeIs('admin.users.*'), 'label' => 'Benutzer', 'icon' => 'users'],
         ['url' => route('admin.account.edit'), 'active' => request()->routeIs('admin.account.*'), 'label' => 'Mein Konto', 'icon' => 'user'],
     ];

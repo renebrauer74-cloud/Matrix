@@ -151,6 +151,7 @@ code { font-size: .85em; padding: 1px 5px; border-radius: 4px; background: rgba(
 .tag-star { color: #ffd34d; border-color: rgba(255, 211, 77, .4); }
 .tag-soldout, .tag-cancelled { color: #fff; background: #c9342a; border-color: #c9342a; }
 .tag-few { color: #1b1200; background: var(--warn); border-color: var(--warn); }
+.tag-almostsoldout { color: #fff; background: #ff6a1f; border-color: #ff6a1f; }
 
 /* --- Dashboard ---------------------------------------------------------------------- */
 .welcome h2 { font: 400 clamp(1.8rem, 4vw, 2.6rem)/1 var(--font-display); text-transform: uppercase; margin-bottom: 6px; }
@@ -252,7 +253,7 @@ code { font-size: .85em; padding: 1px 5px; border-radius: 4px; background: rgba(
 /* --- Formulare ------------------------------------------------------------------------ */
 .field { display: grid; gap: 7px; margin-bottom: 16px; }
 .field label, .field .label { font-weight: 600; font-size: .88rem; }
-input[type="text"], input[type="email"], input[type="password"], input[type="url"], input[type="search"],
+input[type="text"], input[type="email"], input[type="password"], input[type="url"], input[type="search"], input[type="tel"],
 input[type="date"], input[type="time"], input:not([type]), select, textarea {
     width: 100%; min-height: 44px; padding: 10px 13px; border-radius: 10px;
     background: var(--input); border: 1px solid var(--line-strong); color: var(--text);
@@ -322,6 +323,34 @@ fieldset.field legend { padding: 0; margin-bottom: 7px; }
 .room-option input:checked + span { border-color: var(--accent); background: rgba(46, 242, 122, .1); color: var(--text); }
 .room-option input:checked + span .icon { opacity: 1; color: var(--accent); }
 .room-option input:focus-visible + span { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+/* Veranstalter */
+.organizer-fields { margin-top: 2px; padding: 16px 16px 2px; border-radius: 12px; border: 1px dashed var(--line-strong); background: rgba(255, 255, 255, .015); }
+.organizer-grid .organizer-name, .organizer-grid .organizer-street, .organizer-grid .organizer-website { grid-column: 1 / -1; }
+.prow.orow { grid-template-columns: minmax(0, 1fr) auto auto; }
+.orow .erow-actions form { display: contents; }
+.organizer-events { margin-top: 18px; }
+.organizer-event { display: flex; justify-content: space-between; gap: 12px; padding: 10px 0; border-top: 1px solid var(--line); font-weight: 600; }
+.organizer-event:hover span:first-child { color: var(--accent); }
+@media (max-width: 860px) { .orow .erow-actions { flex-direction: row; } }
+@media (max-width: 640px) {
+    .prow.orow { grid-template-columns: minmax(0, 1fr) auto; grid-template-areas: "main actions" "status status"; row-gap: 8px; }
+    .orow .prow-main { grid-area: main; }
+    .orow .prow-status { display: block; grid-area: status; }
+    .orow .erow-actions { grid-area: actions; align-self: start; }
+}
+
+/* Social-Media-Links (Plus-Button-Liste) */
+.social-intro { margin-bottom: 14px; }
+.social-rows { display: grid; gap: 8px; }
+.social-row { display: grid; grid-template-columns: 150px minmax(0, 1fr) auto; gap: 8px; align-items: center; }
+.social-row .field-error { grid-column: 1 / -1; margin: 0; }
+.social-empty { margin-bottom: 4px; }
+.social-add { margin-top: 10px; color: var(--accent); }
+@media (max-width: 600px) {
+    .social-row { grid-template-columns: minmax(0, 1fr) auto; }
+    .social-row input { grid-column: 1 / -1; grid-row: 2; }
+}
 
 .field-highlight { padding: 14px; border-radius: 12px; background: color-mix(in srgb, var(--c-sonstiges) 7%, transparent); border: 1px dashed color-mix(in srgb, var(--c-sonstiges) 50%, transparent); }
 
