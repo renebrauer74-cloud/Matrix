@@ -164,6 +164,7 @@ p { margin: 0 0 1em; }
     .nav-open .main-nav ul li:nth-child(5) { transition-delay: .16s; }
     .nav-open .main-nav ul li:nth-child(6) { transition-delay: .2s; }
     .nav-open .main-nav ul li:nth-child(7) { transition-delay: .24s; }
+    .nav-open .main-nav ul li:nth-child(8) { transition-delay: .28s; }
     .main-nav ul a { font: 400 clamp(2.2rem, 10vw, 3.2rem)/1.15 var(--font-display); text-transform: uppercase; padding: 8px 0; border-bottom: 1px solid var(--line); }
     .main-nav ul a::after { display: none; }
     .main-nav ul a[aria-current="page"] { color: var(--accent); }
