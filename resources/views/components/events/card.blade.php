@@ -35,8 +35,8 @@
         <ul class="event-meta">
             <li class="meta-date"><x-icon name="calendar" /> {{ de_date_short($start) }}</li>
             <li><x-icon name="clock" /> {{ $start->format('H:i') }} Uhr @if ($event->doors_at)<span class="muted">· Einlass {{ substr($event->doors_at, 0, 5) }}</span>@endif</li>
-@if ($event->room)
-            <li><x-icon name="pin" /> {{ $event->room }}</li>
+@if ($event->rooms)
+            <li><x-icon name="pin" /> {{ implode(', ', $event->rooms) }}</li>
 @endif
         </ul>
     </div>

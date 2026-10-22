@@ -33,7 +33,7 @@ class BuildEventStructuredDataAction
             'eventAttendanceMode' => 'https://schema.org/OfflineEventAttendanceMode',
             'location' => [
                 '@type' => 'Place',
-                'name' => config('matrix.venue.name').($event->room ? ' – '.$event->room : ''),
+                'name' => config('matrix.venue.name').($event->rooms ? ' – '.implode(', ', $event->rooms) : ''),
                 'address' => [
                     '@type' => 'PostalAddress',
                     'streetAddress' => config('matrix.venue.street'),

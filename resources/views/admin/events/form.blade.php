@@ -6,16 +6,15 @@
     use App\Enums\Location\RoomEnum;
     use App\Enums\MediaCollectionEnum;
     use App\Enums\MediaConversionEnum;
-    use App\Http\Requests\Admin\EventRequest;
 
     $isEdit = $event !== null;
     $start = $event?->starts_at;
 
     $category = old('category', $presetCategory->value);
     $roomNames = array_map(fn (RoomEnum $room): string => $room->value, RoomEnum::cases());
-    $storedRoom = (string) $event?->room;
-    $roomValue = old('room', $storedRoom === '' ? '' : (in_array($storedRoom, $roomNames, true) ? $storedRoom : EventRequest::CUSTOM_ROOM));
-    $roomCustom = old('room_custom', $roomValue === EventRequest::CUSTOM_ROOM ? $storedRoom : '');
+    $storedRooms = $event?->rooms ?? [];
+    $selectedRooms = (array) old('rooms', array_intersect($storedRooms, $roomNames));
+    $roomCustom = old('room_custom', implode(', ', array_diff($storedRooms, $roomNames)));
     $imageUrl = $event?->getFirstMediaUrl(MediaCollectionEnum::Events->value, MediaConversionEnum::Medium->value) ?: null;
     $status = old('status', $event?->status->value ?? EventStatusEnum::Published->value);
     $featured = (bool) old('is_featured', $event?->is_featured ?? false);
@@ -116,23 +115,23 @@
                 <x-admin.field-error name="end_time" />
                 <p class="hint">Endet die Veranstaltung nach Mitternacht, einfach die Uhrzeit eintragen – der Folgetag wird automatisch erkannt.</p>
 
-                <div class="grid-2">
-                    <div class="field{{ $hasError('room') }}">
-                        <label for="room">Raum</label>
-                        <select id="room" name="room" data-room-select data-preview="room">
-                            <option value="">– kein Raum angegeben –</option>
+                <fieldset class="field{{ $hasError('rooms', 'rooms.*') }}">
+                    <legend class="label">Räume <small class="muted">– einen oder mehrere anklicken</small></legend>
+                    <div class="room-picker">
 @foreach ($roomNames as $roomName)
-                            <option value="{{ $roomName }}" @selected($roomValue === $roomName)>{{ $roomName }}</option>
+                        <label class="room-option">
+                            <input type="checkbox" name="rooms[]" value="{{ $roomName }}" @checked(in_array($roomName, $selectedRooms, true)) data-room-input>
+                            <span><x-icon name="check" /> {{ $roomName }}</span>
+                        </label>
 @endforeach
-                            <option value="{{ EventRequest::CUSTOM_ROOM }}" @selected($roomValue === EventRequest::CUSTOM_ROOM)>Anderer Ort …</option>
-                        </select>
-                        <x-admin.field-error name="room" />
                     </div>
-                    <div class="field{{ $hasError('room_custom') }}" data-room-custom @if ($roomValue !== EventRequest::CUSTOM_ROOM) hidden @endif>
-                        <label for="room_custom">Anderer Ort</label>
-                        <input id="room_custom" name="room_custom" type="text" maxlength="80" value="{{ $roomCustom }}" placeholder="z. B. Biergarten" data-preview="room">
-                        <x-admin.field-error name="room_custom" />
-                    </div>
+                    <x-admin.field-error name="rooms" />
+                    <x-admin.field-error name="rooms.*" />
+                </fieldset>
+                <div class="field{{ $hasError('room_custom') }}">
+                    <label for="room_custom">Anderer Ort (optional)</label>
+                    <input id="room_custom" name="room_custom" type="text" maxlength="80" value="{{ $roomCustom }}" placeholder="z. B. Biergarten" data-room-input>
+                    <x-admin.field-error name="room_custom" />
                 </div>
             </section>
 

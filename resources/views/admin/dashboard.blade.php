@@ -51,7 +51,7 @@
                         <span class="mini-thumb">@if ($thumbnail)<img src="{{ $thumbnail }}" alt="" loading="lazy">@endif</span>
                         <span class="mini-body">
                             <strong>{{ $event->title }}</strong>
-                            <span><span class="dot"></span>{{ $describeBadge->execute($event) }} · {{ $event->starts_at->minDayName }} {{ $event->starts_at->format('H:i') }}{{ $event->room ? ' · '.$event->room : '' }}</span>
+                            <span><span class="dot"></span>{{ $describeBadge->execute($event) }} · {{ $event->starts_at->minDayName }} {{ $event->starts_at->format('H:i') }}{{ $event->rooms ? ' · '.implode(', ', $event->rooms) : '' }}</span>
                         </span>
 @if ($event->isDraft())
                         <span class="tag tag-draft">Entwurf</span>

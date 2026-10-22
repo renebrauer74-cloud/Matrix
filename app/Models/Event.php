@@ -25,7 +25,7 @@ use Spatie\MediaLibrary\MediaCollections\Models\Media;
  */
 #[Fillable([
     'title', 'slug', 'subtitle', 'category', 'category_label', 'description',
-    'starts_at', 'doors_at', 'ends_at', 'room', 'image_focus',
+    'starts_at', 'doors_at', 'ends_at', 'rooms', 'image_focus',
     'ticket_url', 'price_presale', 'price_box', 'age_rating',
     'ticket_status', 'status', 'is_featured', 'created_by',
 ])]
@@ -50,6 +50,7 @@ class Event extends Model implements HasMedia
             'category' => EventCategoryEnum::class,
             'starts_at' => 'datetime',
             'ends_at' => 'datetime',
+            'rooms' => 'array',
             'image_focus' => ImageFocusEnum::class,
             'ticket_status' => TicketStatusEnum::class,
             'status' => EventStatusEnum::class,

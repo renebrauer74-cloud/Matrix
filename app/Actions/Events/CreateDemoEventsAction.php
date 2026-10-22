@@ -38,7 +38,7 @@ class CreateDemoEventsAction
                 'description' => $description,
                 'starts_at' => today()->addDays($days)->setTimeFromTimeString($time),
                 'doors_at' => $doors,
-                'room' => $room->value,
+                'rooms' => [$room->value],
                 'image_focus' => ImageFocusEnum::Center,
                 'ticket_url' => $ticketStatus->allowsTicketSale() ? config('matrix.venue.tickets_url') : null,
                 'price_presale' => $presale,

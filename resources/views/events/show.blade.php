@@ -60,7 +60,7 @@
 @if ($event->doors_at)
                             <div><dt><x-icon name="door" /> Einlass</dt><dd>{{ substr($event->doors_at, 0, 5) }} Uhr</dd></div>
 @endif
-                            <div><dt><x-icon name="pin" /> Ort</dt><dd>{{ $event->room ?: config('matrix.venue.name') }}</dd></div>
+                            <div><dt><x-icon name="pin" /> Ort</dt><dd>{{ $event->rooms ? implode(', ', $event->rooms) : config('matrix.venue.name') }}</dd></div>
 @if ($price)
                             <div><dt><x-icon name="ticket" /> Preis</dt><dd>{{ $price }}</dd></div>
 @endif
@@ -94,7 +94,7 @@
             <aside class="event-aside">
                 <div class="aside-card">
                     <h2>Location</h2>
-                    <p><strong>{{ config('matrix.venue.name') }}</strong>{{ $event->room ? ' · '.$event->room : '' }}<br>
+                    <p><strong>{{ config('matrix.venue.name') }}</strong>{{ $event->rooms ? ' · '.implode(', ', $event->rooms) : '' }}<br>
                         {{ config('matrix.venue.street') }}, {{ config('matrix.venue.zip') }} {{ config('matrix.venue.city') }}</p>
                     <a class="link-arrow" href="{{ config('matrix.venue.route_url') }}" target="_blank" rel="noopener">Route planen <x-icon name="arrow-right" /></a>
                 </div>

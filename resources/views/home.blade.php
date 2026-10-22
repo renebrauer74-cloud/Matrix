@@ -36,8 +36,8 @@
                             <ul class="hero-meta">
                                 <li><x-icon name="calendar" /> {{ de_date_long($slide->starts_at) }}</li>
                                 <li><x-icon name="clock" /> {{ $slide->starts_at->format('H:i') }} Uhr</li>
-@if ($slide->room)
-                                <li><x-icon name="pin" /> {{ $slide->room }}</li>
+@if ($slide->rooms)
+                                <li><x-icon name="pin" /> {{ implode(', ', $slide->rooms) }}</li>
 @endif
                             </ul>
                             <div class="hero-actions">

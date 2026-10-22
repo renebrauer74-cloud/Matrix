@@ -52,8 +52,8 @@ it('keeps an event without end time listed for six hours after it started', func
 });
 
 it('filters the programme by category and room', function () {
-    Event::factory()->category(EventCategoryEnum::Konzert)->create(['title' => 'Metal-Abend', 'room' => 'Tube']);
-    Event::factory()->category(EventCategoryEnum::Party)->create(['title' => 'Clubnacht', 'room' => 'Katakomben']);
+    Event::factory()->category(EventCategoryEnum::Konzert)->create(['title' => 'Metal-Abend', 'rooms' => ['Tube']]);
+    Event::factory()->category(EventCategoryEnum::Party)->create(['title' => 'Clubnacht', 'rooms' => ['Katakomben']]);
 
     $this->get(route('events.index', 'konzerte'))
         ->assertSee('Metal-Abend')
@@ -62,6 +62,20 @@ it('filters the programme by category and room', function () {
     $this->get(route('events.index', ['raum' => 'Katakomben']))
         ->assertSee('Clubnacht')
         ->assertDontSee('Metal-Abend');
+});
+
+it('lists an event in several rooms under each of its rooms', function () {
+    Event::factory()->create(['title' => 'Turmfest', 'rooms' => ['Tube', 'Katakomben']]);
+    Event::factory()->create(['title' => 'Vortragsabend', 'rooms' => ['Halle 5']]);
+
+    $this->get(route('events.index'))
+        ->assertSee('Tube, Katakomben')
+        ->assertSeeInOrder(['<option value="Halle 5"', '<option value="Katakomben"', '<option value="Tube"'], false)
+        ->assertDontSee('<option value="Tube, Katakomben"', false);
+
+    $this->get(route('events.index', ['raum' => 'Katakomben']))
+        ->assertSee('Turmfest')
+        ->assertDontSee('Vortragsabend');
 });
 
 it('shows featured events first in the home slider', function () {

@@ -33,7 +33,7 @@ class ListAdminEventsAction
                     ->where('title', 'like', $like)
                     ->orWhere('subtitle', 'like', $like)
                     ->orWhere('category_label', 'like', $like)
-                    ->orWhere('room', 'like', $like));
+                    ->orWhere('rooms', 'like', $like));
             })
             ->orderBy('starts_at', $filter === EventListFilterEnum::Past ? 'desc' : 'asc')
             ->get();
