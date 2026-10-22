@@ -55,6 +55,8 @@
                         </span>
 @if ($event->isDraft())
                         <span class="tag tag-draft">Entwurf</span>
+@elseif ($event->isScheduled())
+                        <span class="tag tag-scheduled" title="Geht am {{ $event->publish_at->format('d.m.Y \u\m H:i') }} Uhr online"><x-icon name="clock" /> Geplant</span>
 @endif
                     </a>
                 </li>

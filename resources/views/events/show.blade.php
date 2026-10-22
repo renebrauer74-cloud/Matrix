@@ -22,6 +22,11 @@
         <x-icon name="eye-off" /> Entwurf – nur für eingeloggte Admins sichtbar.
         <a href="{{ route('admin.events.edit', $event) }}">Bearbeiten</a>
     </div>
+@elseif ($event->isScheduled())
+    <div class="draft-bar">
+        <x-icon name="clock" /> Geplant – geht am {{ $event->publish_at->format('d.m.Y \u\m H:i') }} Uhr online, bis dahin nur für eingeloggte Admins sichtbar.
+        <a href="{{ route('admin.events.edit', $event) }}">Bearbeiten</a>
+    </div>
 @endif
 
     <article class="event-detail cat-{{ $event->category->value }}">

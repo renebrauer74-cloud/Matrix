@@ -21,6 +21,7 @@ class DuplicateEventAction
             $copy = $event->replicate(['slug', 'created_at', 'updated_at']);
             $copy->title = $event->title.' (Kopie)';
             $copy->status = EventStatusEnum::Draft;
+            $copy->publish_at = null;
             $copy->is_featured = false;
             $copy->created_by = $author?->getKey();
             $copy->slug = $this->generateSlug->execute($copy);

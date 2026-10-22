@@ -77,10 +77,10 @@ class EventController extends Controller
     }
 
     /**
-     * Entwürfe sehen nur eingeloggte Admins.
+     * Entwürfe und noch nicht freigeschaltete geplante Veranstaltungen sehen nur eingeloggte Admins.
      */
     private function ensureVisible(Event $event): void
     {
-        abort_if($event->isDraft() && ! auth()->check(), 404);
+        abort_if(! $event->isOnline() && ! auth()->check(), 404);
     }
 }

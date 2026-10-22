@@ -10,6 +10,7 @@ use App\Enums\Location\RoomEnum;
 use App\Enums\MediaCollectionEnum;
 use App\Models\Event;
 use App\Models\Organizer;
+use DateTimeInterface;
 use Illuminate\Database\Eloquent\Factories\Factory;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Str;
@@ -54,6 +55,14 @@ class EventFactory extends Factory
     public function draft(): static
     {
         return $this->state(fn (array $attributes) => ['status' => EventStatusEnum::Draft]);
+    }
+
+    public function scheduled(?DateTimeInterface $publishAt = null): static
+    {
+        return $this->state(fn (array $attributes) => [
+            'status' => EventStatusEnum::Published,
+            'publish_at' => $publishAt ?? now()->addDay(),
+        ]);
     }
 
     public function featured(): static

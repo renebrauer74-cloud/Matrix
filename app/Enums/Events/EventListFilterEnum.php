@@ -10,6 +10,7 @@ enum EventListFilterEnum: string
     case Upcoming = 'upcoming';
     case Past = 'past';
     case Drafts = 'drafts';
+    case Scheduled = 'scheduled';
     case All = 'all';
 
     public function label(): string
@@ -18,6 +19,7 @@ enum EventListFilterEnum: string
             self::Upcoming => 'Kommende',
             self::Past => 'Vergangene',
             self::Drafts => 'Entwürfe',
+            self::Scheduled => 'Geplant',
             self::All => 'Alle',
         };
     }

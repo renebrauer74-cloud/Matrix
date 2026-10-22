@@ -1,7 +1,7 @@
 @php
     use App\Enums\Events\EventCategoryEnum;
     use App\Enums\Events\EventOrganizerEnum;
-    use App\Enums\Events\EventStatusEnum;
+    use App\Enums\Events\EventPublicationEnum;
     use App\Enums\Events\ImageFocusEnum;
     use App\Enums\Events\TicketStatusEnum;
     use App\Enums\Location\RoomEnum;
@@ -20,7 +20,14 @@
     $organizerMode = old('organizer', $organizer ? EventOrganizerEnum::External->value : EventOrganizerEnum::Matrix->value);
     $organizerId = (string) old('organizer_id', $organizer?->getKey());
     $imageUrl = $event?->getFirstMediaUrl(MediaCollectionEnum::Events->value, MediaConversionEnum::Medium->value) ?: null;
-    $status = old('status', $event?->status->value ?? EventStatusEnum::Published->value);
+    $status = old('status', match (true) {
+        $event?->isDraft() === true => EventPublicationEnum::Draft->value,
+        $event?->isScheduled() === true => EventPublicationEnum::Scheduled->value,
+        default => EventPublicationEnum::Published->value,
+    });
+    $scheduledAt = $event?->isScheduled() ? $event->publish_at : null;
+    $publishDate = old('publish_date', $scheduledAt?->format('Y-m-d'));
+    $publishTime = old('publish_time', $scheduledAt?->format('H:i'));
     $featured = (bool) old('is_featured', $event?->is_featured ?? false);
     $focus = old('image_focus', $event?->image_focus->value ?? ImageFocusEnum::Center->value);
     $ticketStatus = old('ticket_status', $event?->ticket_status->value ?? TicketStatusEnum::Available->value);
@@ -248,9 +255,26 @@
             <div class="side-sticky">
                 <section class="panel">
                     <h2 class="panel-title">Veröffentlichung</h2>
-                    <div class="segmented segmented-full">
-                        <label><input type="radio" name="status" value="{{ EventStatusEnum::Published->value }}" @checked($status !== EventStatusEnum::Draft->value)><span><x-icon name="eye" /> Online</span></label>
-                        <label><input type="radio" name="status" value="{{ EventStatusEnum::Draft->value }}" @checked($status === EventStatusEnum::Draft->value)><span><x-icon name="eye-off" /> Entwurf</span></label>
+                    <div class="segmented segmented-full segmented-3" role="radiogroup" aria-label="Veröffentlichung">
+@foreach (EventPublicationEnum::cases() as $option)
+                        <label><input type="radio" name="status" value="{{ $option->value }}" @checked($status === $option->value) data-publication-input><span><x-icon :name="$option->icon()" /> {{ $option->label() }}</span></label>
+@endforeach
+                    </div>
+                    <div class="publish-at{{ $hasError('publish_date', 'publish_time') }}" data-publish-at @if ($status !== EventPublicationEnum::Scheduled->value) hidden @endif>
+                        <div class="grid-2">
+                            <div class="field">
+                                <label for="publish_date">Online ab *</label>
+                                <input id="publish_date" name="publish_date" type="date" value="{{ $publishDate }}">
+                            </div>
+                            <div class="field">
+                                <label for="publish_time">Uhrzeit *</label>
+                                <input id="publish_time" name="publish_time" type="time" value="{{ $publishTime }}">
+                            </div>
+                        </div>
+@if ($errors->hasAny(['publish_date', 'publish_time']))
+                        <p class="field-error">{{ $errors->first('publish_date') ?: $errors->first('publish_time') }}</p>
+@endif
+                        <p class="hint">Bis dahin sehen nur eingeloggte Admins die Veranstaltung.</p>
                     </div>
                     <label class="switch">
                         <input type="checkbox" name="is_featured" value="1" @checked($featured)>

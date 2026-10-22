@@ -45,8 +45,11 @@ class EventController extends Controller
     {
         $event = $saveEvent->execute(new Event, $request->eventAttributes(), $request->organizerAttributes(), $request->organizerId(), $request->file('image'), false, $request->user());
 
-        return $this->afterSave($request, $event)->with('success', '„'.$event->title.'“ wurde '
-            .($event->isDraft() ? 'als Entwurf gespeichert.' : 'veröffentlicht.'));
+        return $this->afterSave($request, $event)->with('success', '„'.$event->title.'“ wurde '.match (true) {
+            $event->isDraft() => 'als Entwurf gespeichert.',
+            $event->isScheduled() => 'gespeichert und geht am '.$event->publish_at->format('d.m.Y \u\m H:i').' Uhr online.',
+            default => 'veröffentlicht.',
+        });
     }
 
     public function edit(Event $event): View
@@ -81,7 +84,10 @@ class EventController extends Controller
 
     public function toggleStatus(Event $event): RedirectResponse
     {
-        $event->update(['status' => $event->isDraft() ? EventStatusEnum::Published : EventStatusEnum::Draft]);
+        $event->update([
+            'status' => $event->isOnline() ? EventStatusEnum::Draft : EventStatusEnum::Published,
+            'publish_at' => null,
+        ]);
 
         return back(fallback: route('admin.events.index'))->with('success', '„'.$event->title.'“ ist jetzt '
             .($event->isDraft() ? 'ein Entwurf.' : 'veröffentlicht.'));

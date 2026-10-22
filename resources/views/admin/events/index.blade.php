@@ -78,6 +78,8 @@
             <div class="erow-status">
 @if ($event->isDraft())
                 <span class="tag tag-draft">Entwurf</span>
+@elseif ($event->isScheduled())
+                <span class="tag tag-scheduled" title="Geht am {{ $event->publish_at->format('d.m.Y \u\m H:i') }} Uhr online"><x-icon name="clock" /> {{ $event->publish_at->format('d.m. H:i') }}</span>
 @else
                 <span class="tag tag-live">Online</span>
 @endif
@@ -96,7 +98,7 @@
                     <div class="menu-pop">
                         <form method="post" action="{{ route('admin.events.status', $event) }}">
                             @csrf
-                            <button type="submit"><x-icon :name="$event->isDraft() ? 'eye' : 'eye-off'" /> {{ $event->isDraft() ? 'Veröffentlichen' : 'Offline nehmen' }}</button>
+                            <button type="submit"><x-icon :name="$event->isOnline() ? 'eye-off' : 'eye'" /> {{ $event->isOnline() ? 'Offline nehmen' : ($event->isScheduled() ? 'Sofort veröffentlichen' : 'Veröffentlichen') }}</button>
                         </form>
                         <form method="post" action="{{ route('admin.events.duplicate', $event) }}">
                             @csrf

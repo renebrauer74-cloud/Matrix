@@ -138,6 +138,13 @@
     });
     if (organizerFields) updateOrganizer();
 
+    // Veröffentlichung „Geplant“: Datum und Uhrzeit einblenden
+    const publishAt = $('[data-publish-at]');
+    $$('[data-publication-input]').forEach((r) => r.addEventListener('change', () => {
+        publishAt.hidden = r.value !== 'scheduled';
+        if (!publishAt.hidden && !$('#publish_date').value) $('#publish_date').focus();
+    }));
+
     // Schnell-Ausfüllen (Ticket-Links)
     $$('[data-fill]').forEach((b) => b.addEventListener('click', () => {
         const input = document.getElementById(b.dataset.fill);
