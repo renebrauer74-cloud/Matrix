@@ -134,6 +134,8 @@
     organizerSelect?.addEventListener('change', () => {
         const data = JSON.parse(organizerSelect.selectedOptions[0]?.dataset.organizer || '{}');
         $$('[data-organizer-field]').forEach((input) => { input.value = data[input.dataset.organizerField] || ''; });
+        const subtitle = $('[data-organizer-subtitle]');
+        if (subtitle) subtitle.textContent = organizerSelect.value ? subtitle.dataset.textExisting : subtitle.dataset.textNew;
         if (!organizerSelect.value) $('#organizer_name').focus();
     });
     if (organizerFields) updateOrganizer();

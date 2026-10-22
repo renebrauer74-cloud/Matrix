@@ -157,19 +157,22 @@
                 <x-admin.field-error name="organizer" />
 
                 <div class="organizer-fields" data-organizer-fields @if ($organizerMode !== EventOrganizerEnum::External->value) hidden @endif>
-@if ($organizers->isNotEmpty())
                     <div class="field{{ $hasError('organizer_id') }}">
-                        <label for="organizer_id">Gespeicherte Veranstalter</label>
+                        <label for="organizer_id">Angelegten Veranstalter auswählen</label>
+@if ($organizers->isNotEmpty())
                         <select id="organizer_id" name="organizer_id" data-organizer-select>
-                            <option value="">+ Neuer Veranstalter</option>
+                            <option value="">– keiner, neuen Veranstalter unten eintragen –</option>
 @foreach ($organizers as $option)
                             <option value="{{ $option->getKey() }}" data-organizer="{{ json_encode($option->only($option->getFillable())) }}" @selected($organizerId === (string) $option->getKey())>{{ $option->name }}{{ $option->city ? ' · '.$option->city : '' }}</option>
 @endforeach
                         </select>
                         <x-admin.field-error name="organizer_id" />
-                        <p class="hint">Änderungen an den Stammdaten gelten für alle Veranstaltungen dieses Veranstalters · <a class="link" href="{{ route('admin.organizers.index') }}" target="_blank" rel="noopener">Alle Veranstalter verwalten</a></p>
-                    </div>
+                        <p class="hint">Aus dem Menü <a class="link" href="{{ route('admin.organizers.index') }}" target="_blank" rel="noopener">Veranstalter</a>. Änderungen unten gelten für alle Veranstaltungen dieses Veranstalters.</p>
+@else
+                        <p class="hint">Noch keine Veranstalter angelegt – einfach unten eintragen, er wird dann für weitere Veranstaltungen gespeichert.</p>
 @endif
+                    </div>
+                    <h3 class="organizer-subtitle" data-organizer-subtitle data-text-new="Neuen Veranstalter eintragen" data-text-existing="Stammdaten des gewählten Veranstalters">{{ $organizerId !== '' && $organizers->contains('id', (int) $organizerId) ? 'Stammdaten des gewählten Veranstalters' : 'Neuen Veranstalter eintragen' }}</h3>
                     <x-admin.organizer-fields :organizer="$organizer" prefix="organizer_" />
                 </div>
             </section>
