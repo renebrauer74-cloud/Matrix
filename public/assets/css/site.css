@@ -768,3 +768,50 @@ p { margin: 0 0 1em; }
 @media (prefers-reduced-motion: reduce) {
     *, *::before, *::after { animation-duration: .01ms !important; transition-duration: .01ms !important; scroll-behavior: auto !important; }
 }
+
+/* --- Genres, Video, Serien-Termine ------------------------------------------------------- */
+.genre-tag {
+    display: inline-flex; align-items: center; padding: 4px 10px; border-radius: 999px;
+    border: 1px solid var(--line-strong); font-size: .78rem; font-weight: 600; color: rgba(255, 255, 255, .85);
+    transition: border-color .2s, color .2s, background .2s;
+}
+.genre-tag:hover { border-color: var(--cat); color: var(--text); background: color-mix(in srgb, var(--cat) 12%, transparent); }
+.reset-filter { margin-left: 8px; color: var(--accent); font-weight: 600; text-decoration: underline; text-underline-offset: 3px; white-space: nowrap; }
+.room-filter { display: flex; gap: 8px; }
+@media (max-width: 720px) { .room-filter select { flex: 1; min-width: 0; } }
+
+.video-badge {
+    position: absolute; right: 12px; bottom: 12px; z-index: 2; display: grid; place-items: center;
+    width: 38px; height: 38px; border-radius: 50%; background: rgba(8, 9, 11, .75); backdrop-filter: blur(6px);
+    border: 1px solid var(--line-strong); color: var(--text);
+}
+.video-badge .icon { width: 20px; height: 20px; }
+.events.is-list .video-badge { display: none; }
+
+.event-main { min-width: 0; display: grid; gap: 28px; align-content: start; }
+.event-video { position: relative; aspect-ratio: 16 / 9; border-radius: var(--radius); overflow: hidden; background: #000; border: 1px solid var(--line); box-shadow: 0 0 80px -30px var(--cat); }
+.event-video video, .event-video iframe { position: absolute; inset: 0; width: 100%; height: 100%; border: 0; }
+.yt-facade {
+    display: grid; place-items: center;
+    background: radial-gradient(70% 90% at 50% 40%, color-mix(in srgb, var(--cat) 35%, transparent), transparent 70%), linear-gradient(160deg, #15181d, #0a0b0d);
+}
+.yt-facade > img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; opacity: .55; }
+.yt-play {
+    position: relative; z-index: 1; display: grid; place-items: center; width: 84px; height: 84px; border-radius: 50%;
+    border: 0; background: var(--accent); color: var(--accent-ink); cursor: pointer;
+    box-shadow: 0 0 0 10px rgba(46, 242, 122, .18), 0 14px 40px rgba(0, 0, 0, .5);
+    transition: transform .25s var(--ease), box-shadow .25s;
+}
+.yt-play:hover { transform: scale(1.08); box-shadow: 0 0 0 16px rgba(46, 242, 122, .14), 0 14px 40px rgba(0, 0, 0, .5); }
+.yt-play .icon { width: 44px; height: 44px; }
+.yt-note { position: absolute; left: 0; right: 0; bottom: 0; z-index: 1; margin: 0; padding: 10px 14px; display: flex; gap: 8px; align-items: center; background: linear-gradient(0deg, rgba(0, 0, 0, .8), transparent); font-size: .78rem; color: rgba(255, 255, 255, .75); }
+
+.series-card { margin-bottom: 16px; }
+.series-dates { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; }
+.series-dates a { display: flex; align-items: center; gap: 14px; padding: 8px 10px; border-radius: 10px; border: 1px solid var(--line); transition: border-color .2s, background .2s; }
+.series-dates a:hover { border-color: var(--cat); background: color-mix(in srgb, var(--cat) 8%, transparent); color: var(--text); }
+.series-dates .icon { margin-left: auto; color: var(--muted); }
+.sd-day { display: grid; justify-items: center; width: 44px; font-size: .66rem; font-weight: 700; letter-spacing: .1em; text-transform: uppercase; color: var(--muted); line-height: 1.1; }
+.sd-day b { font: 400 1.5rem/1 var(--font-display); color: var(--text); letter-spacing: 0; }
+.sd-info { display: grid; font-size: .85rem; color: var(--muted); }
+.sd-info strong { color: var(--text); font-size: .95rem; }

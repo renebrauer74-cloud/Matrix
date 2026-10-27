@@ -1,16 +1,20 @@
 @php
     use App\Enums\Events\EventCategoryEnum;
 
-    $roomQuery = $room ? ['raum' => $room] : [];
-    $categoryUrl = fn (?EventCategoryEnum $category): string => route('events.index', array_filter(['kategorie' => $category?->slug()] + $roomQuery));
+    $filterQuery = array_filter(['raum' => $room, 'genre' => $genre?->slug]);
+    $categoryUrl = fn (?EventCategoryEnum $category): string => route('events.index', array_filter(['kategorie' => $category?->slug()] + $filterQuery));
+    $heading = $genre?->name ?? $category?->plural() ?? 'Alle Veranstaltungen';
 @endphp
-<x-layouts.site :title="$category?->plural() ?? 'Programm'">
+<x-layouts.site :title="$genre?->name ?? $category?->plural() ?? 'Programm'">
     <section class="page-hero">
         <div class="container">
             <p class="eyebrow">Programm</p>
-            <h1 class="page-title">{{ $category?->plural() ?? 'Alle Veranstaltungen' }}</h1>
+            <h1 class="page-title">{{ caps($heading) }}</h1>
             <p class="page-lead">
-                {{ $total }} {{ $total === 1 ? 'Termin' : 'Termine' }}{{ $room ? ' im Raum '.$room : '' }} – Konzerte, Partys und mehr im Müser-Turm.
+                {{ $total }} {{ $total === 1 ? 'Termin' : 'Termine' }}{{ $genre && $category ? ' · '.$category->plural() : '' }}{{ $room ? ' im Raum '.$room : '' }} – Konzerte, Partys und mehr im Müser-Turm.
+@if ($genre || $room)
+                <a class="reset-filter" href="{{ route('events.index', array_filter(['kategorie' => $category?->slug()])) }}">Filter zurücksetzen</a>
+@endif
             </p>
         </div>
     </section>
@@ -25,8 +29,18 @@
 @endforeach
                 </nav>
                 <div class="toolbar-right">
-@if ($rooms->isNotEmpty())
+@if ($rooms->isNotEmpty() || $genres->isNotEmpty())
                     <form class="room-filter" method="get" action="{{ route('events.index', array_filter(['kategorie' => $category?->slug()])) }}" data-autosubmit>
+@if ($genres->isNotEmpty())
+                        <label class="sr-only" for="genre">Genre</label>
+                        <select id="genre" name="genre">
+                            <option value="">Alle Genres</option>
+@foreach ($genres as $option)
+                            <option value="{{ $option->slug }}" @selected($genre?->is($option))>{{ $option->name }}</option>
+@endforeach
+                        </select>
+@endif
+@if ($rooms->isNotEmpty())
                         <label class="sr-only" for="raum">Raum</label>
                         <select id="raum" name="raum">
                             <option value="">Alle Räume</option>
@@ -34,6 +48,7 @@
                             <option value="{{ $option }}" @selected($option === $room)>{{ $option }}</option>
 @endforeach
                         </select>
+@endif
                         <noscript><button class="btn btn-sm" type="submit">Filtern</button></noscript>
                     </form>
 @endif
@@ -46,7 +61,7 @@
                 <x-icon name="calendar" class="icon icon-xl" />
                 <h3>Aktuell keine Termine</h3>
                 <p>Hier stehen gerade keine Veranstaltungen an. Schau bald wieder vorbei!</p>
-@if ($category || $room)
+@if ($category || $room || $genre)
                 <a class="btn btn-outline" href="{{ route('events.index') }}">Alle Veranstaltungen zeigen</a>
 @endif
             </div>

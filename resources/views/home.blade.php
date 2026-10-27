@@ -10,7 +10,7 @@
 <x-layouts.site>
     {{-- HERO-KARUSSELL --}}
 @if ($slides->isNotEmpty())
-    <section class="hero" data-carousel aria-roledescription="Karussell" aria-label="Aktuelle Veranstaltungen">
+    <section class="hero" data-carousel data-interval="{{ config('matrix.home.slide_seconds') }}" aria-roledescription="Karussell" aria-label="Aktuelle Veranstaltungen">
         <h1 class="sr-only">Matrix Bochum – aktuelle Veranstaltungen</h1>
         <div class="hero-viewport" data-viewport>
             <div class="hero-track" data-track>
@@ -25,10 +25,10 @@
                     <div class="container hero-inner">
                         <div class="hero-copy">
                             <p class="hero-kicker">
-                                <span class="cat-badge">{{ $describeBadge->execute($slide) }}</span>
-                                {{ $slide->is_featured ? 'Highlight' : 'Demnächst' }}
+                                <span class="cat-badge">{{ caps($describeBadge->execute($slide)) }}</span>
+                                {{ $slide->isFeaturedNow() ? 'Highlight' : 'Demnächst' }}
                             </p>
-                            <h2 class="hero-title">{{ $slide->title }}</h2>
+                            <h2 class="hero-title">{{ caps($slide->title) }}</h2>
 @if ($slide->subtitle)
                             <p class="hero-sub">{{ $slide->subtitle }}</p>
 @endif

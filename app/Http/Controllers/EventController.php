@@ -6,6 +6,7 @@ use App\Actions\Events\BuildEventCalendarAction;
 use App\Actions\Events\CountUpcomingEventsAction;
 use App\Enums\Events\EventCategoryEnum;
 use App\Models\Event;
+use App\Models\Genre;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 use Illuminate\View\View;
@@ -29,12 +30,21 @@ class EventController extends Controller
 
         $room = $rooms->contains($request->query('raum')) ? $request->query('raum') : null;
 
+        // Nur Genres, zu denen es kommende Termine gibt
+        $genres = Genre::query()
+            ->whereHas('events', fn ($query) => $query->published()->upcoming())
+            ->orderBy('name')
+            ->get();
+
+        $genre = $genres->firstWhere('slug', $request->query('genre'));
+
         $events = Event::query()
             ->published()
             ->upcoming()
-            ->with('media')
+            ->with(['media', 'genres'])
             ->when($category, fn ($query) => $query->where('category', $category))
             ->when($room, fn ($query) => $query->whereJsonContains('rooms', $room))
+            ->when($genre, fn ($query) => $query->whereHas('genres', fn ($query) => $query->whereKey($genre->getKey())))
             ->orderBy('starts_at')
             ->get();
 
@@ -45,24 +55,31 @@ class EventController extends Controller
             'counts' => $countUpcomingEvents->execute(),
             'rooms' => $rooms,
             'room' => $room,
+            'genres' => $genres,
+            'genre' => $genre,
         ]);
     }
 
     public function show(Event $event): View
     {
         $this->ensureVisible($event);
+        $event->load('genres');
 
         return view('events.show', [
             'event' => $event,
             'related' => Event::query()
                 ->published()
                 ->upcoming()
-                ->with('media')
+                ->with(['media', 'genres'])
                 ->whereKeyNot($event->getKey())
                 ->orderByRaw('(category = ?) desc', [$event->category->value])
                 ->orderBy('starts_at')
                 ->limit(3)
                 ->get(),
+            // Weitere Termine derselben Serie
+            'seriesDates' => $event->isSeries()
+                ? $event->seriesEvents()->published()->upcoming()->whereKeyNot($event->getKey())->limit(6)->get()
+                : collect(),
         ]);
     }
 

@@ -19,7 +19,10 @@ class CreateDemoEventsAction
 {
     public const DEMO_MARK = '[Demo]';
 
-    public function __construct(private GenerateEventSlugAction $generateSlug) {}
+    public function __construct(
+        private GenerateEventSlugAction $generateSlug,
+        private ResolveGenresAction $resolveGenres,
+    ) {}
 
     /**
      * @return int Anzahl angelegter Veranstaltungen
@@ -34,7 +37,8 @@ class CreateDemoEventsAction
                 'title' => $title,
                 'subtitle' => $subtitle,
                 'category' => $category,
-                'category_label' => $label,
+                // Bei „Sonstiges“ die Art (z. B. Lesung), sonst werden daraus Genres
+                'category_label' => $category === EventCategoryEnum::Sonstiges ? $label : null,
                 'description' => $description,
                 'starts_at' => today()->addDays($days)->setTimeFromTimeString($time),
                 'doors_at' => $doors,
@@ -51,6 +55,10 @@ class CreateDemoEventsAction
             ]);
             $event->slug = $this->generateSlug->execute($event);
             $event->save();
+
+            if ($category !== EventCategoryEnum::Sonstiges) {
+                $event->genres()->sync($this->resolveGenres->execute([], preg_split('/\s*&\s*/', $label) ?: []));
+            }
 
             if ($image !== null) {
                 $event->addMedia(public_path('assets/img/'.$image))

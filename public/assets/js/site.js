@@ -40,7 +40,7 @@
         const thumbs = [...carousel.querySelectorAll('[data-thumb]')];
         const counter = carousel.querySelector('[data-current]');
         const autoplay = !window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-        carousel.style.setProperty('--slide-ms', '5000ms');
+        carousel.style.setProperty('--slide-ms', (Number(carousel.dataset.interval) || 5) * 1000 + 'ms');
         carousel.classList.toggle('no-autoplay', !autoplay);
 
         const makeClone = (el) => {
@@ -221,12 +221,24 @@
         }));
     }
 
-    // --- Raum-Filter sofort absenden ----------------------------------------------------
+    // --- Genre-/Raum-Filter sofort absenden (leere Felder nicht in die URL) ------------------
     document.querySelectorAll('[data-autosubmit] select').forEach((s) => {
         s.addEventListener('change', () => {
-            const form = s.form;
-            if (!s.value) { s.disabled = true; }
-            form.submit();
+            s.form.querySelectorAll('select').forEach((el) => { el.disabled = !el.value; });
+            s.form.submit();
+        });
+    });
+
+    // --- YouTube erst nach Klick laden (Datenschutz) ---------------------------------------
+    document.querySelectorAll('[data-yt]').forEach((box) => {
+        box.querySelector('.yt-play').addEventListener('click', () => {
+            const iframe = document.createElement('iframe');
+            iframe.src = `https://www.youtube-nocookie.com/embed/${encodeURIComponent(box.dataset.yt)}?autoplay=1&rel=0`;
+            iframe.title = box.dataset.title || 'Video';
+            iframe.allow = 'accelerometer; autoplay; encrypted-media; gyroscope; picture-in-picture; fullscreen';
+            iframe.allowFullscreen = true;
+            box.replaceChildren(iframe);
+            box.classList.add('is-playing');
         });
     });
 

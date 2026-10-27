@@ -11,12 +11,12 @@ class HomeController extends Controller
 {
     public function __invoke(CountUpcomingEventsAction $countUpcomingEvents, LoadRoomsAction $loadRooms): View
     {
-        $upcoming = fn () => Event::query()->published()->upcoming()->with('media');
+        $upcoming = fn () => Event::query()->published()->upcoming()->with(['media', 'genres']);
 
         return view('home', [
-            // Highlights zuerst, danach mit den nächsten Terminen aufgefüllt
+            // Highlights im eingestellten Zeitraum zuerst, danach mit den nächsten Terminen aufgefüllt
             'slides' => $upcoming()
-                ->orderByDesc('is_featured')
+                ->highlightsFirst()
                 ->orderBy('starts_at')
                 ->limit(config('matrix.home.slides'))
                 ->get(),

@@ -90,6 +90,35 @@ if (! function_exists('versioned_asset')) {
     }
 }
 
+if (! function_exists('caps')) {
+    /**
+     * Für Texte, die per CSS in Versalien erscheinen (Titel, Badges): kleines ß durch das große ẞ ersetzen –
+     * sonst steht ein rundes Kleinbuchstaben-ß zwischen den Großbuchstaben.
+     */
+    function caps(?string $text): string
+    {
+        return str_replace('ß', 'ẞ', (string) $text);
+    }
+}
+
+if (! function_exists('normalize_caps')) {
+    /**
+     * Beim Speichern: in komplett groß geschriebenen Wörtern (Caps Lock) ß → ẞ, z. B. „GROßE“ → „GROẞE“.
+     * Normal geschriebene Wörter wie „Große“ bleiben unverändert.
+     */
+    function normalize_caps(?string $text): string
+    {
+        return (string) preg_replace_callback('/\p{L}+/u', function (array $match): string {
+            $word = $match[0];
+            $rest = str_replace('ß', '', $word);
+
+            return str_contains($word, 'ß') && $rest !== '' && $rest === Str::upper($rest)
+                ? str_replace('ß', 'ẞ', $word)
+                : $word;
+        }, (string) $text);
+    }
+}
+
 if (! function_exists('phone_link')) {
     /**
      * Telefonnummer für tel:-Links, z. B. „0234292102“.

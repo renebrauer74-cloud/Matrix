@@ -67,9 +67,12 @@ Route::prefix('admin')->name('admin.')->group(function () {
 
         Route::get('/', Admin\DashboardController::class)->name('dashboard');
 
-        Route::resource('events', Admin\EventController::class)->except('show');
-        Route::post('events/{event}/duplizieren', [Admin\EventController::class, 'duplicate'])->name('events.duplicate');
-        Route::post('events/{event}/status', [Admin\EventController::class, 'toggleStatus'])->name('events.status');
+        // Bereits gelöschte Veranstaltung (z. B. über die Zurück-Taste aufgerufen): zur Liste statt 404
+        $eventMissing = fn () => to_route('admin.events.index')->with('error', 'Diese Veranstaltung gibt es nicht mehr – sie wurde vermutlich gelöscht.');
+
+        Route::resource('events', Admin\EventController::class)->except('show')->missing($eventMissing);
+        Route::post('events/{event}/duplizieren', [Admin\EventController::class, 'duplicate'])->name('events.duplicate')->missing($eventMissing);
+        Route::post('events/{event}/status', [Admin\EventController::class, 'toggleStatus'])->name('events.status')->missing($eventMissing);
 
         Route::get('nachrichten', [Admin\MessageController::class, 'index'])->name('messages.index');
         Route::get('nachrichten/{message}', [Admin\MessageController::class, 'show'])->name('messages.show');

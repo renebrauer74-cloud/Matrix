@@ -16,7 +16,7 @@
 @else
     <div class="cover-fallback" aria-hidden="true">
         <img class="cover-logo" src="{{ asset('assets/img/logo.png') }}" alt="" loading="lazy">
-        <span class="cover-kicker">{{ $describeBadge->execute($event) }}</span>
-        <span class="cover-title">{{ $event->title }}</span>
+        <span class="cover-kicker">{{ caps($describeBadge->execute($event)) }}</span>
+        <span class="cover-title">{{ caps($event->title) }}</span>
     </div>
 @endif

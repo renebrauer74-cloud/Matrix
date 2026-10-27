@@ -72,6 +72,9 @@ return [
         'slides' => 6,
         'events' => 24,
         'visible_events' => 9,
+
+        // Sekunden, bis das Karussell zur nächsten Veranstaltung weiterspringt
+        'slide_seconds' => 5,
     ],
 
 ];

@@ -2,13 +2,22 @@
 
 namespace App\Http\Requests\Admin;
 
+use App\Actions\Events\CalculateRecurrenceDatesAction;
+use App\Actions\Events\ExtractYoutubeIdAction;
+use App\Actions\Events\ResolveSeriesDatesAction;
 use App\Enums\Events\EventCategoryEnum;
 use App\Enums\Events\EventOrganizerEnum;
 use App\Enums\Events\EventPublicationEnum;
 use App\Enums\Events\EventStatusEnum;
+use App\Enums\Events\HighlightEndEnum;
+use App\Enums\Events\HighlightStartEnum;
 use App\Enums\Events\ImageFocusEnum;
+use App\Enums\Events\RecurrenceEndEnum;
+use App\Enums\Events\RecurrenceEnum;
+use App\Enums\Events\SeriesScopeEnum;
 use App\Enums\Events\TicketStatusEnum;
 use App\Enums\Location\RoomEnum;
+use App\Models\Event;
 use Carbon\CarbonImmutable;
 use Closure;
 use Illuminate\Contracts\Validation\ValidationRule;
@@ -33,6 +42,19 @@ class EventRequest extends AdminFormRequest
 
         if ($organizerWebsite !== '' && ! preg_match('#^https?://#i', $organizerWebsite)) {
             $this->merge(['organizer_website' => 'https://'.$organizerWebsite]);
+        }
+
+        $videoUrl = trim((string) $this->input('video_url'));
+
+        if ($videoUrl !== '' && ! preg_match('#^https?://#i', $videoUrl)) {
+            $this->merge(['video_url' => 'https://'.$videoUrl]);
+        }
+
+        // Caps Lock: „GROßE NACHT“ → „GROẞE NACHT“
+        foreach (['title', 'subtitle', 'category_label'] as $field) {
+            if (is_string($this->input($field))) {
+                $this->merge([$field => normalize_caps($this->input($field))]);
+            }
         }
 
         $this->prepareSocialLinks();
@@ -71,8 +93,28 @@ class EventRequest extends AdminFormRequest
                 'organizer_website' => ['nullable', 'url:http,https', 'max:500'],
             ]),
             ...$this->socialLinkRules(),
+            'genres' => ['nullable', 'array', 'max:12'],
+            'genres.*' => ['integer', Rule::exists('genres', 'id')],
+            'new_genres' => ['nullable', 'array', 'max:12'],
+            'new_genres.*' => ['nullable', 'string', 'max:60'],
             'image' => $this->imageRules(),
             'remove_image' => ['nullable', 'boolean'],
+            'video' => $this->videoRules(),
+            'remove_video' => ['nullable', 'boolean'],
+            'video_url' => ['nullable', 'url:http,https', 'max:500', function (string $attribute, mixed $value, Closure $fail): void {
+                if ((new ExtractYoutubeIdAction)->execute((string) $value) === null) {
+                    $fail('Das ist kein gültiger YouTube-Link (z. B. https://www.youtube.com/watch?v=… oder https://youtu.be/…).');
+                }
+            }],
+            'repeat' => ['nullable', Rule::enum(RecurrenceEnum::class)],
+            'repeat_end' => ['nullable', Rule::enum(RecurrenceEndEnum::class)],
+            'repeat_count' => ['nullable', 'integer', 'min:2', 'max:52'],
+            'repeat_until' => ['nullable', 'date_format:Y-m-d'],
+            'repeat_dates' => ['nullable', 'array', 'max:'.CalculateRecurrenceDatesAction::MAX_DATES],
+            'repeat_dates.*' => ['date_format:Y-m-d'],
+            'repeat_js' => ['nullable', 'boolean'],
+            'apply_to' => ['nullable', Rule::enum(SeriesScopeEnum::class)],
+            'template_id' => ['nullable', 'integer', Rule::exists('events', 'id')],
             'image_focus' => ['nullable', Rule::enum(ImageFocusEnum::class)],
             'ticket_url' => ['nullable', 'url', 'max:500'],
             'price_presale' => ['nullable', 'string', 'max:60'],
@@ -83,6 +125,12 @@ class EventRequest extends AdminFormRequest
             'publish_date' => ['exclude_unless:status,'.EventPublicationEnum::Scheduled->value, 'required', 'date_format:Y-m-d'],
             'publish_time' => ['exclude_unless:status,'.EventPublicationEnum::Scheduled->value, 'required', 'date_format:H:i'],
             'is_featured' => ['nullable', 'boolean'],
+            'featured_start' => ['exclude_unless:is_featured,1', 'nullable', Rule::enum(HighlightStartEnum::class)],
+            'featured_from_date' => ['exclude_unless:is_featured,1', 'exclude_unless:featured_start,'.HighlightStartEnum::Custom->value, 'required', 'date_format:Y-m-d'],
+            'featured_from_time' => ['exclude_unless:is_featured,1', 'exclude_unless:featured_start,'.HighlightStartEnum::Custom->value, 'required', 'date_format:H:i'],
+            'featured_end' => ['exclude_unless:is_featured,1', 'nullable', Rule::enum(HighlightEndEnum::class)],
+            'featured_until_date' => ['exclude_unless:is_featured,1', 'exclude_unless:featured_end,'.HighlightEndEnum::Custom->value, 'required', 'date_format:Y-m-d'],
+            'featured_until_time' => ['exclude_unless:is_featured,1', 'exclude_unless:featured_end,'.HighlightEndEnum::Custom->value, 'required', 'date_format:H:i'],
         ];
     }
 
@@ -112,6 +160,19 @@ class EventRequest extends AdminFormRequest
             'image.max' => 'Das Bild ist größer als '.(config('matrix.uploads.max_kilobytes') / 1024).' MB.',
             'image.dimensions' => 'Das Bild ist zu klein (mindestens 200 × 200 Pixel).',
             'image.uploaded' => 'Das Bild ist zu groß oder wurde nicht vollständig hochgeladen.',
+            ...$this->uploadMessages('video'),
+            'video_url.url' => 'Das ist kein gültiger YouTube-Link (z. B. https://www.youtube.com/watch?v=… oder https://youtu.be/…).',
+            'genres.max' => 'Bitte höchstens 12 Genres wählen.',
+            'genres.*' => 'Bitte nur Genres aus der Liste auswählen.',
+            'new_genres.max' => 'Bitte höchstens 12 Genres wählen.',
+            'new_genres.*.max' => 'Ein Genre darf höchstens 60 Zeichen lang sein.',
+            'repeat_count.*' => 'Bitte 2 bis 52 Termine angeben.',
+            'repeat_until.*' => 'Bitte ein gültiges Enddatum angeben.',
+            'repeat_dates.*' => 'Bitte nur gültige Daten auswählen.',
+            'featured_from_date.*' => 'Bitte angeben, ab wann das Highlight gilt.',
+            'featured_from_time.*' => 'Bitte angeben, ab wann das Highlight gilt.',
+            'featured_until_date.*' => 'Bitte angeben, bis wann das Highlight gilt.',
+            'featured_until_time.*' => 'Bitte angeben, bis wann das Highlight gilt.',
         ];
     }
 
@@ -123,12 +184,15 @@ class EventRequest extends AdminFormRequest
     public function eventAttributes(): array
     {
         $startsAt = $this->startsAt();
+        $category = $this->enum('category', EventCategoryEnum::class);
+        $youtubeId = (new ExtractYoutubeIdAction)->execute($this->input('video_url'));
 
         return [
             'title' => $this->input('title'),
             'subtitle' => $this->input('subtitle'),
-            'category' => $this->enum('category', EventCategoryEnum::class),
-            'category_label' => $this->input('category_label'),
+            'category' => $category,
+            // Die freie Bezeichnung gibt es nur bei „Sonstiges“ – Musikrichtungen sind Genres
+            'category_label' => $category === EventCategoryEnum::Sonstiges ? $this->input('category_label') : null,
             'description' => $this->input('description'),
             'starts_at' => $startsAt,
             'doors_at' => $this->input('doors'),
@@ -137,6 +201,7 @@ class EventRequest extends AdminFormRequest
             'image_focus' => $this->enum('image_focus', ImageFocusEnum::class) ?? ImageFocusEnum::Center,
             'ticket_url' => $this->input('ticket_url'),
             'social_links' => $this->socialLinks() ?: null,
+            'video_url' => $youtubeId !== null ? 'https://www.youtube.com/watch?v='.$youtubeId : null,
             'price_presale' => $this->input('price_presale'),
             'price_box' => $this->input('price_box'),
             'age_rating' => $this->input('age_rating'),
@@ -144,7 +209,139 @@ class EventRequest extends AdminFormRequest
             'status' => $this->publication() === EventPublicationEnum::Draft ? EventStatusEnum::Draft : EventStatusEnum::Published,
             'publish_at' => $this->publishAt(),
             'is_featured' => $this->boolean('is_featured'),
+            'featured_lead_days' => $this->boolean('is_featured') ? $this->highlightStart()->leadDays() : null,
+            'featured_from' => $this->featuredFrom($startsAt),
+            'featured_until' => $this->featuredUntil(),
         ];
+    }
+
+    /**
+     * Ab wann das Highlight gilt – null = sofort.
+     */
+    private function featuredFrom(CarbonImmutable $startsAt): ?CarbonImmutable
+    {
+        if (! $this->boolean('is_featured')) {
+            return null;
+        }
+
+        $start = $this->highlightStart();
+
+        return match (true) {
+            $start === HighlightStartEnum::Custom => CarbonImmutable::createFromFormat('!Y-m-d H:i', $this->input('featured_from_date').' '.$this->input('featured_from_time')),
+            $start->leadDays() !== null => $startsAt->subDays($start->leadDays()),
+            default => null,
+        };
+    }
+
+    /**
+     * Bis wann das Highlight gilt – null = bis zur Veranstaltung.
+     */
+    private function featuredUntil(): ?CarbonImmutable
+    {
+        if (! $this->boolean('is_featured') || $this->enum('featured_end', HighlightEndEnum::class) !== HighlightEndEnum::Custom) {
+            return null;
+        }
+
+        return CarbonImmutable::createFromFormat('!Y-m-d H:i', $this->input('featured_until_date').' '.$this->input('featured_until_time'));
+    }
+
+    private function highlightStart(): HighlightStartEnum
+    {
+        return $this->enum('featured_start', HighlightStartEnum::class) ?? HighlightStartEnum::Immediately;
+    }
+
+    /**
+     * Angehakte Genres aus der Auswahl.
+     *
+     * @return list<int>
+     */
+    public function genreIds(): array
+    {
+        return array_map('intval', (array) $this->input('genres', []));
+    }
+
+    /**
+     * Im Formular neu eingetippte Genres.
+     *
+     * @return list<string>
+     */
+    public function newGenreNames(): array
+    {
+        return array_values(array_filter(array_map('trim', (array) $this->input('new_genres', [])), 'filled'));
+    }
+
+    public function recurrence(): RecurrenceEnum
+    {
+        return $this->enum('repeat', RecurrenceEnum::class) ?? RecurrenceEnum::None;
+    }
+
+    public function recurrenceCount(): int
+    {
+        return (int) ($this->input('repeat_count') ?: 2);
+    }
+
+    /**
+     * Letzter möglicher Termin bei Ende „Bis Datum“.
+     */
+    public function recurrenceUntil(): ?CarbonImmutable
+    {
+        return $this->enum('repeat_end', RecurrenceEndEnum::class) === RecurrenceEndEnum::Until && filled($this->input('repeat_until'))
+            ? CarbonImmutable::createFromFormat('!Y-m-d', $this->input('repeat_until'))
+            : null;
+    }
+
+    /**
+     * Im Formular angehakte Folgetermine – null, wenn sie aus der Regel berechnet werden sollen (ohne JavaScript).
+     *
+     * @return list<string>|null
+     */
+    public function chosenRecurrenceDates(): ?array
+    {
+        if (! $this->boolean('repeat_js') && $this->recurrence() !== RecurrenceEnum::Custom) {
+            return null;
+        }
+
+        return array_values(array_map('strval', (array) $this->input('repeat_dates', [])));
+    }
+
+    /**
+     * Folgetermine, die zusätzlich angelegt werden.
+     *
+     * @return list<string> Daten im Format Y-m-d
+     */
+    public function seriesDates(): array
+    {
+        return app(ResolveSeriesDatesAction::class)->execute(
+            $this->startsAt(),
+            $this->recurrence(),
+            $this->recurrenceCount(),
+            $this->recurrenceUntil(),
+            $this->chosenRecurrenceDates(),
+        );
+    }
+
+    /**
+     * Für welche Termine der Serie die Änderungen gelten.
+     */
+    public function seriesScope(): SeriesScopeEnum
+    {
+        return $this->enum('apply_to', SeriesScopeEnum::class) ?? SeriesScopeEnum::Single;
+    }
+
+    /**
+     * Wurden Bild oder Video geändert? Dann übernehmen auch die anderen Serien-Termine die neuen Dateien.
+     */
+    public function changesMedia(): bool
+    {
+        return $this->hasFile('image') || $this->boolean('remove_image') || $this->hasFile('video') || $this->boolean('remove_video');
+    }
+
+    /**
+     * Vorlage bei „Erneut ansetzen“.
+     */
+    public function template(): ?Event
+    {
+        return filled($this->input('template_id')) ? Event::query()->find($this->input('template_id')) : null;
     }
 
     /**
@@ -155,6 +352,26 @@ class EventRequest extends AdminFormRequest
     public function after(): array
     {
         return [
+            function (Validator $validator): void {
+                $highlightFields = ['date', 'time', 'featured_from_date', 'featured_from_time', 'featured_until_date', 'featured_until_time'];
+
+                if (! $validator->errors()->hasAny($highlightFields) && $this->featuredUntil() !== null) {
+                    $from = $this->featuredFrom($this->startsAt());
+
+                    if ($this->featuredUntil()->lessThanOrEqualTo($from ?? now())) {
+                        $validator->errors()->add('featured_until_date', 'Das Highlight-Ende muss nach dem Start liegen.');
+                    }
+                }
+            },
+            function (Validator $validator): void {
+                if ($this->recurrence() === RecurrenceEnum::None || $validator->errors()->hasAny(['date', 'time', 'repeat', 'repeat_count', 'repeat_until', 'repeat_dates', 'repeat_dates.*'])) {
+                    return;
+                }
+
+                if ($this->seriesDates() === []) {
+                    $validator->errors()->add('repeat', 'Für die Wiederholung sind keine weiteren Termine ausgewählt.');
+                }
+            },
             function (Validator $validator): void {
                 if ($validator->errors()->hasAny(['date', 'time', 'publish_date', 'publish_time']) || $this->publication() !== EventPublicationEnum::Scheduled) {
                     return;

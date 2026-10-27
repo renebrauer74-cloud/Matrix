@@ -1,6 +1,6 @@
 @inject('describeBadge', 'App\Actions\Events\DescribeEventBadgeAction')
-@inject('describeGenre', 'App\Actions\Events\DescribeEventGenreAction')
 @inject('describePrice', 'App\Actions\Events\DescribeEventPriceAction')
+@inject('extractYoutubeId', 'App\Actions\Events\ExtractYoutubeIdAction')
 @inject('summarize', 'App\Actions\Events\SummarizeEventDescriptionAction')
 @inject('buildStructuredData', 'App\Actions\Events\BuildEventStructuredDataAction')
 @php
@@ -9,10 +9,11 @@
 
     $start = $event->starts_at;
     $end = $event->ends_at;
-    $genre = $describeGenre->execute($event);
     $price = $describePrice->execute($event);
     $background = $event->getFirstMediaUrl(MediaCollectionEnum::Events->value, MediaConversionEnum::Medium->value);
     $ogImage = $event->getFirstMediaUrl(MediaCollectionEnum::Events->value, MediaConversionEnum::Large->value);
+    $video = $event->getFirstMedia(MediaCollectionEnum::EventVideo->value);
+    $youtubeId = $extractYoutubeId->execute($event->video_url);
 @endphp
 <x-layouts.site :title="$event->title" :meta-description="$summarize->execute($event, 155) ?: ($event->subtitle ?? '')" :og-image="$ogImage ?: null">
     <script type="application/ld+json">{!! json_encode($buildStructuredData->execute($event), JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE | JSON_HEX_TAG) !!}</script>
@@ -49,12 +50,12 @@
 
                     <div class="event-head">
                         <div class="event-card-tags">
-                            <span class="cat-badge">{{ $describeBadge->execute($event) }}</span>
-@if ($genre)
-                            <span class="genre">{{ $genre }}</span>
-@endif
+                            <span class="cat-badge">{{ caps($describeBadge->execute($event)) }}</span>
+@foreach ($event->genres as $genre)
+                            <a class="genre-tag" href="{{ route('events.index', ['genre' => $genre->slug]) }}">{{ $genre->name }}</a>
+@endforeach
                         </div>
-                        <h1 class="event-title">{{ $event->title }}</h1>
+                        <h1 class="event-title">{{ caps($event->title) }}</h1>
 @if ($event->subtitle)
                         <p class="event-subtitle">{{ $event->subtitle }}</p>
 @endif
@@ -92,14 +93,48 @@
         </div>
 
         <div class="container event-body">
-            <div class="prose">
-@if ($event->description)
-                {{ format_text($event->description) }}
-@else
-                <p class="muted">Weitere Infos folgen.</p>
+            <div class="event-main">
+@if ($video)
+                <div class="event-video">
+                    <video controls playsinline preload="metadata" @if ($ogImage) poster="{{ $ogImage }}" @endif>
+                        <source src="{{ $video->getUrl() }}" type="{{ $video->mime_type }}">
+                    </video>
+                </div>
 @endif
+@if ($youtubeId)
+                <div class="event-video yt-facade" data-yt="{{ $youtubeId }}" data-title="{{ $event->title }}">
+@if ($ogImage)
+                    <img src="{{ $ogImage }}" alt="" loading="lazy">
+@endif
+                    <button type="button" class="yt-play" aria-label="Video auf YouTube abspielen"><x-icon name="play" /></button>
+                    <p class="yt-note"><x-icon name="alert" /> Beim Abspielen werden Daten an YouTube (Google) übertragen.</p>
+                </div>
+@endif
+                <div class="prose">
+@if ($event->description)
+                    {{ format_text($event->description) }}
+@else
+                    <p class="muted">Weitere Infos folgen.</p>
+@endif
+                </div>
             </div>
             <aside class="event-aside">
+@if ($seriesDates->isNotEmpty())
+                <div class="aside-card series-card">
+                    <h2>Weitere Termine</h2>
+                    <ul class="series-dates">
+@foreach ($seriesDates as $date)
+                        <li>
+                            <a href="{{ route('events.show', $date) }}">
+                                <span class="sd-day"><b>{{ $date->starts_at->format('d') }}</b>{{ de_month_short($date->starts_at) }}</span>
+                                <span class="sd-info"><strong>{{ $date->starts_at->dayName }}</strong>{{ $date->starts_at->format('H:i') }} Uhr{{ $date->ticket_status->showsRibbon() ? ' · '.$date->ticket_status->label() : '' }}</span>
+                                <x-icon name="arrow-right" />
+                            </a>
+                        </li>
+@endforeach
+                    </ul>
+                </div>
+@endif
                 <div class="aside-card">
                     <h2>Location</h2>
                     <p><strong>{{ config('matrix.venue.name') }}</strong>{{ $event->rooms ? ' · '.implode(', ', $event->rooms) : '' }}<br>

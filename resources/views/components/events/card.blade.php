@@ -14,6 +14,9 @@
             <span class="date-day">{{ $start->format('d') }}</span>
             <span class="date-mon">{{ de_month_short($start) }}</span>
         </time>
+@if (filled($event->video_url) || $event->hasMedia(\App\Enums\MediaCollectionEnum::EventVideo->value))
+        <span class="video-badge" title="Mit Video"><x-icon name="play" /></span>
+@endif
 @if ($event->ticket_status->showsRibbon())
         <span class="ribbon ribbon-{{ $event->ticket_status->value }}">{{ $event->ticket_status->label() }}</span>
 @endif
@@ -21,13 +24,13 @@
 
     <div class="event-card-body">
         <div class="event-card-tags">
-            <span class="cat-badge">{{ $describeBadge->execute($event) }}</span>
+            <span class="cat-badge">{{ caps($describeBadge->execute($event)) }}</span>
 @if ($genre)
             <span class="genre">{{ $genre }}</span>
 @endif
         </div>
         <h3 class="event-card-title">
-            <a class="stretched-link" href="{{ route('events.show', $event) }}">{{ $event->title }}</a>
+            <a class="stretched-link" href="{{ route('events.show', $event) }}">{{ caps($event->title) }}</a>
         </h3>
 @if ($event->subtitle)
         <p class="event-card-sub">{{ $event->subtitle }}</p>
