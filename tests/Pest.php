@@ -2,6 +2,7 @@
 
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Http\UploadedFile;
 use Tests\TestCase;
 
 /*
@@ -23,6 +24,14 @@ pest()->extend(TestCase::class)
 function actingAsAdmin(): TestCase
 {
     return test()->actingAs(User::factory()->create());
+}
+
+/**
+ * Minimaler MP4-Kopf, damit die Media Library die Datei als video/mp4 erkennt.
+ */
+function fakeVideo(string $name = 'clip.mp4'): UploadedFile
+{
+    return UploadedFile::fake()->createWithContent($name, "\x00\x00\x00\x18ftypmp42\x00\x00\x00\x00mp42isom".str_repeat("\x00", 512));
 }
 
 /**

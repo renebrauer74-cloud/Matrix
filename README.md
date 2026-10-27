@@ -36,12 +36,21 @@ Projektregeln für Actions, Models, Enums und Uploads stehen in `.ai/guidelines/
 ## Veranstaltungen
 
 - Arten: **Konzert**, **Party**, **Sonstiges** – bei „Sonstiges“ ist das Feld
-  „Was für eine Veranstaltung?“ Pflicht (z. B. Lesung, Comedy). Bei Konzert/Party ist es
-  optional als Genre/Motto nutzbar.
+  „Was für eine Veranstaltung?“ Pflicht (z. B. Lesung, Comedy).
+- **Genres:** Mehrfachauswahl per Dropdown, neue Genres direkt eintippen. Filter im Programm (`?genre=`).
+  Genres ohne Veranstaltung verschwinden beim Löschen automatisch.
+- **Wiederkehrende Termine:** wöchentlich, alle 2 Wochen, monatlich (gleicher Wochentag oder Datum)
+  oder frei gewählte Daten. Jeder Termin ist eine eigene Veranstaltung; alle teilen sich eine `series_id`.
+  Bearbeiten und Löschen für „nur diesen“, „diesen & folgende“ oder „alle Termine“.
+- **Erneut ansetzen:** `/admin/events/neu?vorlage={id}` übernimmt alle Angaben samt Bild und Video.
+- **Highlight-Zeitraum:** z. B. „2 Wochen vorher“ bis zur Veranstaltung – erst dann steht das Event
+  ganz vorne im Startseiten-Karussell. Tempo des Karussells: `matrix.home.slide_seconds`.
+- **Video:** YouTube-Link (wird erst nach Klick geladen) und/oder eigenes MP4/WebM/MOV.
+- Titel in Großbuchstaben bekommen automatisch das große **ẞ** (`caps()`, `normalize_caps()`).
 - Bilder werden als WebP in zwei Größen gespeichert (760 px und 1600 px Breite).
-- „Highlight“ zeigt das Event groß im Slider der Startseite.
 - Entwürfe sind nur für eingeloggte Admins sichtbar.
 - Jedes Event hat eine Detailseite, Kalender-Download (.ics) und strukturierte Daten für Google.
+- Abgelaufene Admin-Sitzung (`SESSION_LIFETIME`, Standard 480 Minuten): Hinweis und Login statt Fehlerseite.
 
 ## Livegang
 

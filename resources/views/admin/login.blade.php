@@ -9,8 +9,8 @@
 @if (session('success'))
             <div class="alert alert-success" role="alert"><x-icon name="check" /><span>{{ session('success') }}</span></div>
 @endif
-@if ($errors->any())
-            <div class="alert alert-error" role="alert"><x-icon name="alert" /><span>{{ $errors->first() }}</span></div>
+@if ($errors->any() || session('error'))
+            <div class="alert alert-error" role="alert"><x-icon name="alert" /><span>{{ $errors->first() ?: session('error') }}</span></div>
 @endif
 
             <div class="field">

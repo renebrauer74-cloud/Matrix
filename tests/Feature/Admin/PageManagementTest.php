@@ -11,14 +11,6 @@ beforeEach(function () {
     Storage::fake('uploads');
 });
 
-/**
- * Minimaler MP4-Kopf, damit die Media Library die Datei als video/mp4 erkennt.
- */
-function fakeVideo(string $name = 'clip.mp4'): UploadedFile
-{
-    return UploadedFile::fake()->createWithContent($name, "\x00\x00\x00\x18ftypmp42\x00\x00\x00\x00mp42isom".str_repeat("\x00", 512));
-}
-
 it('renders both page editors with the default texts', function (PageEnum $page, string $text) {
     actingAsAdmin()->get(route('admin.pages.edit', $page))
         ->assertOk()

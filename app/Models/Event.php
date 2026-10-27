@@ -15,6 +15,8 @@ use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Spatie\Image\Enums\Fit;
 use Spatie\MediaLibrary\HasMedia;
 use Spatie\MediaLibrary\InteractsWithMedia;
@@ -24,10 +26,11 @@ use Spatie\MediaLibrary\MediaCollections\Models\Media;
  * Veranstaltung (Konzert, Party oder Sonstiges).
  */
 #[Fillable([
-    'title', 'slug', 'subtitle', 'category', 'category_label', 'description',
+    'series_id', 'title', 'slug', 'subtitle', 'category', 'category_label', 'description',
     'starts_at', 'doors_at', 'ends_at', 'rooms', 'organizer_id', 'image_focus',
-    'ticket_url', 'social_links', 'price_presale', 'price_box', 'age_rating',
-    'ticket_status', 'status', 'publish_at', 'is_featured', 'created_by',
+    'ticket_url', 'social_links', 'video_url', 'price_presale', 'price_box', 'age_rating',
+    'ticket_status', 'status', 'publish_at', 'is_featured', 'featured_from', 'featured_until',
+    'featured_lead_days', 'created_by',
 ])]
 class Event extends Model implements HasMedia
 {
@@ -57,6 +60,9 @@ class Event extends Model implements HasMedia
             'status' => EventStatusEnum::class,
             'publish_at' => 'datetime',
             'is_featured' => 'boolean',
+            'featured_from' => 'datetime',
+            'featured_until' => 'datetime',
+            'featured_lead_days' => 'integer',
         ];
     }
 
@@ -65,6 +71,10 @@ class Event extends Model implements HasMedia
         $this->addMediaCollection(MediaCollectionEnum::Events->value)
             ->singleFile()
             ->acceptsMimeTypes(['image/jpeg', 'image/png', 'image/webp', 'image/gif', 'image/avif']);
+
+        $this->addMediaCollection(MediaCollectionEnum::EventVideo->value)
+            ->singleFile()
+            ->acceptsMimeTypes(['video/mp4', 'application/mp4', 'video/webm', 'video/quicktime']);
     }
 
     public function registerMediaConversions(?Media $media = null): void
@@ -74,6 +84,7 @@ class Event extends Model implements HasMedia
                 ->fit(Fit::Max, $conversion->width(), $conversion->width() * 4)
                 ->format('webp')
                 ->quality(82)
+                ->performOnCollections(MediaCollectionEnum::Events->value)
                 ->nonQueued();
         }
     }
@@ -94,6 +105,36 @@ class Event extends Model implements HasMedia
     public function organizer(): BelongsTo
     {
         return $this->belongsTo(Organizer::class);
+    }
+
+    /**
+     * @return BelongsToMany<Genre, $this>
+     */
+    public function genres(): BelongsToMany
+    {
+        return $this->belongsToMany(Genre::class)->orderBy('name');
+    }
+
+    /**
+     * Alle Termine derselben Serie (inklusive dieses).
+     *
+     * @return HasMany<Event, $this>
+     */
+    public function seriesEvents(): HasMany
+    {
+        return $this->hasMany(self::class, 'series_id', 'series_id')->orderBy('starts_at');
+    }
+
+    /**
+     * Highlights, deren Zeitraum gerade läuft, zuerst – danach die übrigen Veranstaltungen.
+     */
+    #[Scope]
+    protected function highlightsFirst(Builder $query): void
+    {
+        $query->orderByRaw(
+            'case when is_featured = ? and (featured_from is null or featured_from <= ?) and (featured_until is null or featured_until >= ?) then 0 else 1 end',
+            [true, now(), now()],
+        );
     }
 
     /**
@@ -174,5 +215,20 @@ class Event extends Model implements HasMedia
     public function canBuyTickets(): bool
     {
         return filled($this->ticket_url) && $this->ticket_status->allowsTicketSale();
+    }
+
+    public function isSeries(): bool
+    {
+        return $this->series_id !== null;
+    }
+
+    /**
+     * Highlight, dessen Zeitraum gerade läuft.
+     */
+    public function isFeaturedNow(): bool
+    {
+        return $this->is_featured
+            && ($this->featured_from === null || $this->featured_from->isPast())
+            && ($this->featured_until === null || $this->featured_until->isFuture());
     }
 }

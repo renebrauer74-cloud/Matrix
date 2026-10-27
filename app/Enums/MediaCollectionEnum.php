@@ -9,6 +9,9 @@ enum MediaCollectionEnum: string
 {
     case Events = 'events';
 
+    /** Eigenes Video einer Veranstaltung (Detailseite) */
+    case EventVideo = 'event-videos';
+
     /** Titelbild einer gepflegten Seite (Jobs, Firmen) */
     case PageHero = 'page-hero';
 
@@ -32,6 +35,6 @@ enum MediaCollectionEnum: string
      */
     public function holdsVideos(): bool
     {
-        return in_array($this, [self::PageHeroVideo, self::PageVideos], true);
+        return in_array($this, [self::EventVideo, self::PageHeroVideo, self::PageVideos], true);
     }
 }
