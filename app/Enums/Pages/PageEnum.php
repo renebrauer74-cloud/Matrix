@@ -15,6 +15,8 @@ enum PageEnum: string
     case Corporate = 'firmen';
     case Location = 'location';
     case Social = 'social-media';
+    case Imprint = 'impressum';
+    case Privacy = 'datenschutz';
 
     public function label(): string
     {
@@ -23,6 +25,8 @@ enum PageEnum: string
             self::Corporate => 'Firmenseite',
             self::Location => 'Location-Seite',
             self::Social => 'Social Media',
+            self::Imprint => 'Impressum',
+            self::Privacy => 'Datenschutzerklärung',
         };
     }
 
@@ -36,7 +40,17 @@ enum PageEnum: string
             self::Corporate => 'corporate',
             self::Location => 'location',
             self::Social => 'home',
+            self::Imprint => 'imprint',
+            self::Privacy => 'privacy',
         };
+    }
+
+    /**
+     * Rechtstexte (Impressum, Datenschutz) bestehen nur aus einem formatierten Fließtext.
+     */
+    public function isLegalText(): bool
+    {
+        return $this === self::Imprint || $this === self::Privacy;
     }
 
     /**
@@ -96,6 +110,53 @@ enum PageEnum: string
                     config('matrix.venue.instagram') ? ['platform' => SocialPlatformEnum::Instagram->value, 'url' => config('matrix.venue.instagram')] : null,
                     config('matrix.venue.facebook') ? ['platform' => SocialPlatformEnum::Facebook->value, 'url' => config('matrix.venue.facebook')] : null,
                 ])),
+            ],
+            self::Imprint => [
+                'body' => '## Angaben gemäß § 5 DDG
+
+Matrix Gastronomiebetriebe UG (haftungsbeschränkt)
+Hauptstraße 200
+44892 Bochum
+
+Vertreten durch den Geschäftsführer: Dirk Zimmer
+
+## Kontakt
+
+Telefon: '.config('matrix.venue.phone').'
+E-Mail: '.config('matrix.venue.email').'
+
+## Registereintrag
+
+Registergericht: Amtsgericht Bochum
+Registernummer: wird nachgereicht
+
+## Umsatzsteuer-ID
+
+Umsatzsteuer-Identifikationsnummer gemäß § 27a UStG: wird nachgereicht
+
+## Verbraucherstreitbeilegung
+
+Wir sind nicht bereit oder verpflichtet, an Streitbeilegungsverfahren vor einer Verbraucherschlichtungsstelle teilzunehmen.',
+            ],
+            self::Privacy => [
+                'body' => '**Hinweis: Die vollständige Datenschutzerklärung wird vor dem Livegang hier eingefügt.**
+
+## Verantwortlicher
+
+Matrix Gastronomiebetriebe UG (haftungsbeschränkt), Hauptstraße 200, 44892 Bochum
+E-Mail: '.config('matrix.venue.email').'
+
+## Hinweise zu dieser Website
+
+Diese Website lädt keine Schriftarten, Karten oder Tracking-Skripte von Drittanbietern. Schriften werden lokal ausgeliefert. Es wird nur ein technisch notwendiges Sitzungs-Cookie gesetzt, das die Formulare vor Missbrauch schützt und den Login im Administrationsbereich ermöglicht.
+
+## Kontaktformular, Fundsachen, Bewerbungen und Firmenanfragen
+
+Wenn du uns über ein Formular dieser Website schreibst, speichern wir deine Angaben (z. B. Name, E-Mail-Adresse, Telefonnummer, Nachricht und ggf. hochgeladene Dateien wie Lebenslauf oder Foto), um deine Anfrage zu bearbeiten und dir zu antworten. Die Daten sind nur für unser Team im geschützten Administrationsbereich einsehbar und werden nicht an Dritte weitergegeben.
+
+Rechtsgrundlage ist Art. 6 Abs. 1 lit. b DSGVO (Anfrage bzw. Anbahnung eines Vertrags- oder Beschäftigungsverhältnisses) sowie deine Einwilligung nach Art. 6 Abs. 1 lit. a DSGVO, die du jederzeit per E-Mail widerrufen kannst. Wir löschen die Daten, sobald deine Anfrage erledigt ist und keine gesetzlichen Aufbewahrungspflichten entgegenstehen; Bewerbungsunterlagen spätestens sechs Monate nach Abschluss des Bewerbungsverfahrens.
+
+Links zu Ticketshops und Kartendiensten führen auf Seiten externer Anbieter; dort gelten deren Datenschutzbestimmungen.',
             ],
         };
     }

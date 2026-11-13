@@ -721,3 +721,14 @@ fieldset.field legend { padding: 0; margin-bottom: 7px; }
 .menu-pop a:hover { background: rgba(255, 255, 255, .06); }
 .menu-sep { height: 1px; margin: 4px 6px; background: var(--line); }
 .btn-again { color: var(--accent); }
+/* --- Mein Konto: Profil und Passwort als getrennte Formulare ------------------------ */
+.account-password { margin-top: 20px; }
+.account-password .alert { margin-bottom: 18px; }
+
+/* --- Rechtstexte (Impressum, Datenschutz) ------------------------------------------ */
+.legal-switch { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 16px; }
+.legal-textarea { min-height: 420px; font: .92rem/1.55 ui-monospace, SFMono-Regular, Consolas, monospace; }
+.legal-help { margin-top: 12px; }
+.legal-help ul { margin: 6px 0 10px; padding-left: 1.2em; }
+.legal-help li { margin: 2px 0; }
+.legal-switch .btn-ghost { border-color: var(--line-strong); }

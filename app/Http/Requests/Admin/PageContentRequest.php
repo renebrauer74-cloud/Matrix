@@ -74,6 +74,9 @@ class PageContentRequest extends AdminFormRequest
                 'cta_text' => ['nullable', 'string', 'max:400'],
             ],
             PageEnum::Social => $this->socialLinkRules(),
+            PageEnum::Imprint, PageEnum::Privacy => [
+                'body' => ['required', 'string', 'max:100000'],
+            ],
         };
     }
 
@@ -84,6 +87,8 @@ class PageContentRequest extends AdminFormRequest
     {
         return [
             'hero_title.required' => 'Bitte eine Überschrift eingeben.',
+            'body.required' => 'Bitte einen Text eingeben.',
+            'body.max' => 'Der Text ist zu lang.',
             'contact_email.email' => 'Bitte eine gültige E-Mail-Adresse angeben.',
             ...$this->uploadMessages('hero_image', 'hero_video'),
             ...$this->socialLinkMessages(),

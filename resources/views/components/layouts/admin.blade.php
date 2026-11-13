@@ -13,6 +13,7 @@
         ['url' => route('admin.pages.edit', PageEnum::Location), 'active' => $editedPage === PageEnum::Location || request()->routeIs('admin.rooms.*'), 'label' => 'Location', 'icon' => 'pin'],
         ['url' => route('admin.pages.edit', PageEnum::Corporate), 'active' => $editedPage === PageEnum::Corporate, 'label' => 'Firmenseite', 'icon' => 'capacity'],
         ['url' => route('admin.pages.edit', PageEnum::Social), 'active' => $editedPage === PageEnum::Social, 'label' => 'Social Media', 'icon' => 'instagram'],
+        ['url' => route('admin.pages.edit', PageEnum::Imprint), 'active' => $editedPage instanceof PageEnum && $editedPage->isLegalText(), 'label' => 'Impressum & Datenschutz', 'icon' => 'list'],
         ['url' => route('admin.users.index'), 'active' => request()->routeIs('admin.users.*'), 'label' => 'Benutzer', 'icon' => 'users'],
         ['url' => route('admin.account.edit'), 'active' => request()->routeIs('admin.account.*'), 'label' => 'Mein Konto', 'icon' => 'user'],
     ];

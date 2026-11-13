@@ -97,14 +97,22 @@ p { margin: 0 0 1em; }
 /* --- Header ---------------------------------------------------------------- */
 .site-header {
     position: fixed; inset: 0 0 auto; z-index: 50; height: var(--header-h);
-    transition: background .3s, border-color .3s, backdrop-filter .3s;
+    transition: border-color .3s;
     border-bottom: 1px solid transparent;
 }
-.site-header.is-scrolled {
+/* Hintergrund + Blur liegen auf einem Pseudo-Element: ein backdrop-filter direkt am
+   Header würde ihn zum Bezugsrahmen für das fixierte Mobil-Menü machen (das Menü
+   wäre dann nur so hoch wie der Header). */
+.site-header::before {
+    content: ""; position: absolute; inset: 0; z-index: -1;
+    background: transparent;
+    transition: background .3s;
+}
+.site-header.is-scrolled { border-color: var(--line); }
+.site-header.is-scrolled::before {
     background: rgba(8, 9, 11, .82);
     backdrop-filter: saturate(140%) blur(14px);
     -webkit-backdrop-filter: saturate(140%) blur(14px);
-    border-color: var(--line);
 }
 .header-inner { height: 100%; display: flex; align-items: center; justify-content: space-between; gap: 24px; }
 .brand { display: flex; align-items: center; gap: 12px; }
@@ -815,3 +823,9 @@ p { margin: 0 0 1em; }
 .sd-day b { font: 400 1.5rem/1 var(--font-display); color: var(--text); letter-spacing: 0; }
 .sd-info { display: grid; font-size: .85rem; color: var(--muted); }
 .sd-info strong { color: var(--text); font-size: .95rem; }
+/* --- Rechtstexte (Impressum, Datenschutz) ------------------------------------------ */
+.legal-text h1, .legal-text h2 { font: 400 1.7rem/1.1 var(--font-display); text-transform: uppercase; margin: 1.6em 0 .5em; color: var(--text); }
+.legal-text h3, .legal-text h4 { font-size: 1.1rem; font-weight: 700; margin: 1.4em 0 .4em; color: var(--text); }
+.legal-text > :first-child { margin-top: 0; }
+.legal-text ul, .legal-text ol { padding-left: 1.3em; }
+.legal-text li { margin: .25em 0; }

@@ -26,7 +26,7 @@ class UserRequest extends AdminFormRequest
         return [
             'name' => ['required', 'string', 'max:100'],
             'email' => ['required', 'email', 'max:190', Rule::unique(User::class)],
-            'password' => ['required', 'string', 'min:10'],
+            'password' => ['required', 'string', 'min:10', 'confirmed'],
         ];
     }
 
@@ -40,6 +40,7 @@ class UserRequest extends AdminFormRequest
             'email.email' => 'Bitte eine gültige E-Mail-Adresse eingeben.',
             'email.unique' => 'Diese E-Mail-Adresse ist bereits vergeben.',
             'password.min' => 'Mindestens 10 Zeichen.',
+            'password.confirmed' => 'Die beiden Passwörter stimmen nicht überein.',
         ];
     }
 }

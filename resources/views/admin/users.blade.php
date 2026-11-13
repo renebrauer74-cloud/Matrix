@@ -29,12 +29,12 @@
                 @csrf
                 <div @class(['field', 'has-error' => $errors->has('name')])>
                     <label for="u-name">Name</label>
-                    <input id="u-name" name="name" required value="{{ old('name') }}">
+                    <input id="u-name" name="name" required autocomplete="off" value="{{ old('name') }}">
                     <x-admin.field-error name="name" />
                 </div>
                 <div @class(['field', 'has-error' => $errors->has('email')])>
                     <label for="u-email">E-Mail</label>
-                    <input id="u-email" name="email" type="email" required value="{{ old('email') }}">
+                    <input id="u-email" name="email" type="email" required autocomplete="off" value="{{ old('email') }}">
                     <x-admin.field-error name="email" />
                 </div>
                 <div @class(['field', 'has-error' => $errors->has('password')])>
@@ -42,6 +42,10 @@
                     <input id="u-pass" name="password" type="password" minlength="10" required autocomplete="new-password">
                     <x-admin.field-error name="password" />
                     <p class="hint">Mindestens 10 Zeichen. Der Benutzer kann es danach unter „Mein Konto“ ändern.</p>
+                </div>
+                <div class="field">
+                    <label for="u-pass-confirm">Passwort wiederholen</label>
+                    <input id="u-pass-confirm" name="password_confirmation" type="password" minlength="10" required autocomplete="new-password">
                 </div>
                 <button class="btn btn-accent" type="submit"><x-icon name="plus" /> Benutzer anlegen</button>
             </form>

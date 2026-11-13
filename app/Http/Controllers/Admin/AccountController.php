@@ -17,19 +17,8 @@ class AccountController extends Controller
 
     public function update(AccountRequest $request): RedirectResponse
     {
-        $user = $request->user();
-        $user->fill($request->safe()->only(['name', 'email']));
+        $request->user()->update($request->validated());
 
-        if ($request->filled('new_password')) {
-            $user->password = $request->input('new_password');
-        }
-
-        $user->save();
-
-        if ($user->wasChanged('password')) {
-            $request->session()->regenerate();
-        }
-
-        return to_route('admin.account.edit')->with('success', 'Konto gespeichert.');
+        return to_route('admin.account.edit')->with('success', 'Profil gespeichert.');
     }
 }

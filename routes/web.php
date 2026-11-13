@@ -8,6 +8,7 @@ use App\Http\Controllers\CorporateController;
 use App\Http\Controllers\EventController;
 use App\Http\Controllers\HomeController;
 use App\Http\Controllers\JobController;
+use App\Http\Controllers\LegalPageController;
 use App\Http\Controllers\LocationController;
 use App\Http\Controllers\LostItemController;
 use Illuminate\Support\Facades\Route;
@@ -29,8 +30,8 @@ Route::get('event/{event:slug}/kalender.ics', [EventController::class, 'calendar
 
 Route::get('location', [LocationController::class, 'show'])->name('location');
 Route::view('anfahrt', 'pages.directions')->name('directions');
-Route::view('impressum', 'pages.imprint')->name('imprint');
-Route::view('datenschutz', 'pages.privacy')->name('privacy');
+Route::get('impressum', [LegalPageController::class, 'imprint'])->name('imprint');
+Route::get('datenschutz', [LegalPageController::class, 'privacy'])->name('privacy');
 
 /*
 |--------------------------------------------------------------------------
@@ -108,5 +109,6 @@ Route::prefix('admin')->name('admin.')->group(function () {
 
         Route::get('konto', [Admin\AccountController::class, 'edit'])->name('account.edit');
         Route::put('konto', [Admin\AccountController::class, 'update'])->name('account.update');
+        Route::put('konto/passwort', [Admin\AccountPasswordController::class, 'update'])->name('account.password.update');
     });
 });

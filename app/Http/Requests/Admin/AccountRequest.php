@@ -26,8 +26,6 @@ class AccountRequest extends AdminFormRequest
         return [
             'name' => ['required', 'string', 'max:100'],
             'email' => ['required', 'email', 'max:190', Rule::unique(User::class)->ignore($this->user())],
-            'current_password' => ['nullable', 'required_with:new_password', 'current_password'],
-            'new_password' => ['nullable', 'string', 'min:10', 'confirmed'],
         ];
     }
 
@@ -40,10 +38,6 @@ class AccountRequest extends AdminFormRequest
             'name.required' => 'Bitte einen Namen eingeben.',
             'email.email' => 'Bitte eine gültige E-Mail-Adresse eingeben.',
             'email.unique' => 'Diese E-Mail-Adresse ist bereits vergeben.',
-            'current_password.required_with' => 'Bitte das aktuelle Passwort eingeben.',
-            'current_password.current_password' => 'Aktuelles Passwort ist falsch.',
-            'new_password.min' => 'Mindestens 10 Zeichen.',
-            'new_password.confirmed' => 'Passwörter stimmen nicht überein.',
         ];
     }
 }
