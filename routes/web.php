@@ -107,6 +107,9 @@ Route::prefix('admin')->name('admin.')->group(function () {
         Route::post('benutzer', [Admin\UserController::class, 'store'])->name('users.store');
         Route::delete('benutzer/{user}', [Admin\UserController::class, 'destroy'])->name('users.destroy');
 
+        Route::get('quittung', [Admin\ReceiptAppController::class, 'show'])->name('receipts.show');
+        Route::get('quittung/{path}', [Admin\ReceiptAppController::class, 'file'])->where('path', '.*')->name('receipts.file');
+
         Route::get('konto', [Admin\AccountController::class, 'edit'])->name('account.edit');
         Route::put('konto', [Admin\AccountController::class, 'update'])->name('account.update');
         Route::put('konto/passwort', [Admin\AccountPasswordController::class, 'update'])->name('account.password.update');
