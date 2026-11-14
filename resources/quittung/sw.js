@@ -1,6 +1,6 @@
 /* Service Worker: macht die App offline nutzbar.
    Bei Änderungen an den Dateien CACHE-Version erhöhen. */
-const CACHE = 'quittung-v1.1.0';
+const CACHE = 'quittung-v1.2.0';
 const FILES = [
   './',
   './index.html',
