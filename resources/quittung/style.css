@@ -178,6 +178,9 @@ input[readonly] { background: #f6f7f6; }
 .item .btnrow { margin: 8px 0 0; }
 .item .btnrow .btn { flex: 0 1 auto; }
 .empty { color: var(--muted); text-align: center; padding: 24px 0; }
+.item-firma { font-size: 13px; font-weight: 700; color: var(--accent); }
+.firmawahl select { font-weight: 700; border-color: var(--accent); background: var(--accent-soft); }
+.badge { display: inline-block; font-size: 12px; font-weight: 700; padding: 2px 8px; border-radius: 999px; background: var(--accent-soft); color: var(--accent); margin-left: 6px; vertical-align: middle; }
 
 .toast {
   position: fixed; left: 50%; bottom: calc(20px + env(safe-area-inset-bottom));

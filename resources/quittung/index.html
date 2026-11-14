@@ -26,7 +26,7 @@
   <nav class="tabs" role="tablist">
     <button class="tab active" data-view="neu" role="tab">Neu</button>
     <button class="tab" data-view="verlauf" role="tab">Verlauf</button>
-    <button class="tab" data-view="einstellungen" role="tab">Firma</button>
+    <button class="tab" data-view="einstellungen" role="tab">Firmen</button>
   </nav>
 </header>
 
@@ -35,6 +35,10 @@
   <section id="view-neu" class="view active">
     <form id="formQ" novalidate autocomplete="off">
       <div class="card">
+        <label class="field firmawahl" id="firmaWahl" hidden>
+          <span>Quittung für Firma</span>
+          <select name="firmaId" id="fFirma"></select>
+        </label>
         <div class="seg" role="radiogroup" aria-label="Art der Zahlung">
           <label><input type="radio" name="art" value="einnahme" checked><span>Einnahme<small>Wir erhalten Geld</small></span></label>
           <label><input type="radio" name="art" value="ausgabe"><span>Ausgabe<small>Wir zahlen Geld aus</small></span></label>
@@ -148,6 +152,7 @@
         <h2>Erstellte Quittungen</h2>
         <button type="button" class="btn small" id="btnCsv">CSV-Liste</button>
       </div>
+      <select id="filterFirma" class="search" hidden></select>
       <input type="search" id="search" placeholder="Suchen (Nr., Name, Zweck)…" class="search">
       <div id="list"></div>
     </div>
@@ -155,9 +160,18 @@
 
   <!-- ================= EINSTELLUNGEN ================= -->
   <section id="view-einstellungen" class="view">
-    <form id="formS" class="card" novalidate>
-      <h2>Firmendaten</h2>
-      <p class="muted">Erscheinen auf jeder Quittung. Werden nur auf diesem Gerät gespeichert.</p>
+    <div class="card" id="firmenCard">
+      <div class="rowhead">
+        <h2>Firmen</h2>
+        <button type="button" class="btn small" id="btnFirmaNeu">+ Firma</button>
+      </div>
+      <p class="muted">Jede Firma hat ihren eigenen Nummernkreis. Beim Erstellen einer Quittung wählt man aus, für welche Firma sie gilt.</p>
+      <div id="firmenListe"></div>
+    </div>
+
+    <form id="formS" class="card" novalidate hidden>
+      <h2 id="hFirmaForm">Firma bearbeiten</h2>
+      <p class="muted">Erscheint auf jeder Quittung dieser Firma. Wird nur auf diesem Gerät gespeichert.</p>
       <label class="field"><span>Firmenname *</span><input name="firma" required></label>
       <label class="field"><span>Straße, Nr. *</span><input name="strasse" required></label>
       <label class="field"><span>PLZ, Ort *</span><input name="plzOrt" required></label>
@@ -181,7 +195,7 @@
       </div>
 
       <h2>Nummernkreis</h2>
-      <p class="muted">Format: <b id="numPreview">Q-2026-0001</b>. Bei mehreren Geräten jedem Gerät ein eigenes Kürzel geben (z. B. „Q1“, „Q2“), damit keine Nummer doppelt vergeben wird.</p>
+      <p class="muted">Format: <b id="numPreview">Q-2026-0001</b>. Jede Firma braucht ein eigenes Kürzel (z. B. „MX“, „T1“, „T2“). Werden mehrere Geräte genutzt, zusätzlich je Gerät unterscheiden (z. B. „MX1“, „MX2“), damit keine Nummer doppelt vergeben wird.</p>
       <div class="grid2">
         <label class="field"><span>Kürzel</span><input name="praefix" maxlength="10"></label>
         <label class="field"><span>Nächste laufende Nr. (dieses Jahr)</span><input name="naechste" inputmode="numeric" pattern="[0-9]*"></label>
@@ -189,8 +203,9 @@
 
       <div class="error" id="settingsError" hidden></div>
       <button type="submit" class="btn primary block">Speichern</button>
-      <p class="muted small" id="storageInfo"></p>
+      <button type="button" class="btn ghost block" id="btnFirmaAbbrechen">Abbrechen</button>
     </form>
+    <p class="muted small" id="storageInfo"></p>
   </section>
 </main>
 

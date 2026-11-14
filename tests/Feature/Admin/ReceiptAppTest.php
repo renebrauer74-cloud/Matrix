@@ -16,7 +16,8 @@ it('shows the receipt app to admins with its base address', function () {
         ->assertHeader('X-Robots-Tag', 'noindex, nofollow')
         ->assertSee('<base href="'.route('admin.receipts.show').'/">', false)
         ->assertSee('<meta name="sw-scope" content="/admin/quittung">', false)
-        ->assertSee('Quittung erstellen (PDF)');
+        ->assertSee('Quittung erstellen (PDF)')
+        ->assertSee('Quittung für Firma');
 });
 
 it('serves the app files with the right content type', function (string $path, string $type) {

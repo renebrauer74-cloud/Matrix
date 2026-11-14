@@ -1,7 +1,7 @@
 /* Quittungsprogramm – läuft komplett im Browser, keine Daten verlassen das Gerät. */
 'use strict';
 
-const APP_VERSION = '1.0.0';
+const APP_VERSION = '1.1.0';
 
 /* =========================================================
    Hilfsfunktionen: Geld, Datum, Zahl in Worten
@@ -98,6 +98,10 @@ function slug(s) {
     .slice(0, 40);
 }
 
+function neueId() {
+  return (crypto.randomUUID && crypto.randomUUID()) || String(Date.now()) + Math.random().toString(16).slice(2);
+}
+
 const $ = (sel, root = document) => root.querySelector(sel);
 
 function toast(msg, ms = 2600) {
@@ -109,25 +113,52 @@ function toast(msg, ms = 2600) {
 }
 
 /* =========================================================
-   Speicher: Einstellungen (localStorage), Belege (IndexedDB)
+   Speicher: Firmen (localStorage), Belege (IndexedDB)
    ========================================================= */
 
-const LS_KEY = 'quittung.einstellungen.v1';
-const DEFAULTS = {
-  firma: '', strasse: '', plzOrt: '', steuernr: '', ustid: '', kontakt: '',
+const LS_KEY = 'quittung.einstellungen.v2';
+const LS_KEY_V1 = 'quittung.einstellungen.v1';
+const FIRMA_DEFAULTS = {
+  id: '', firma: '', strasse: '', plzOrt: '', steuernr: '', ustid: '', kontakt: '',
   kleinunternehmer: false, ort: '', standardUst: '19', praefix: 'Q', zaehler: {}
 };
 
+function normFirma(f) {
+  return Object.assign({}, FIRMA_DEFAULTS, f || {}, { zaehler: Object.assign({}, (f && f.zaehler) || {}) });
+}
+
+/**
+ * Einstellungen: { firmen: [...], aktiveFirma: id, altFirmaId: id }
+ * altFirmaId = Firma, die aus Version 1 (nur eine Firma) übernommen wurde –
+ * ältere Belege ohne Firmen-Kennung gehören zu ihr.
+ */
 function loadSettings() {
-  try {
-    const raw = JSON.parse(localStorage.getItem(LS_KEY) || '{}');
-    return Object.assign({}, DEFAULTS, raw, { zaehler: Object.assign({}, raw.zaehler || {}) });
-  } catch (e) {
-    return Object.assign({}, DEFAULTS, { zaehler: {} });
+  let s = null;
+  try { s = JSON.parse(localStorage.getItem(LS_KEY) || 'null'); } catch (e) { s = null; }
+  if (!s || typeof s !== 'object') {
+    s = { firmen: [], aktiveFirma: '', altFirmaId: '' };
+    let alt = null;
+    try { alt = JSON.parse(localStorage.getItem(LS_KEY_V1) || 'null'); } catch (e) { alt = null; }
+    if (alt && alt.firma) {
+      const f = normFirma(Object.assign({}, alt, { id: neueId() }));
+      s.firmen.push(f);
+      s.aktiveFirma = f.id;
+      s.altFirmaId = f.id;
+      saveSettings(s);
+    }
   }
+  s.firmen = (Array.isArray(s.firmen) ? s.firmen : []).map(normFirma);
+  if (!s.firmen.some((f) => f.id === s.aktiveFirma)) s.aktiveFirma = s.firmen[0] ? s.firmen[0].id : '';
+  return s;
 }
 function saveSettings(s) {
   try { localStorage.setItem(LS_KEY, JSON.stringify(s)); return true; } catch (e) { return false; }
+}
+function aktiveFirma(s) {
+  return s.firmen.find((f) => f.id === s.aktiveFirma) || null;
+}
+function firmaIdVon(q, s) {
+  return q.firmaId || s.altFirmaId || '';
 }
 
 const DB_NAME = 'quittungen';
@@ -170,21 +201,20 @@ async function dbAll() {
 }
 
 /* =========================================================
-   Nummernkreis
+   Nummernkreis (je Firma)
    ========================================================= */
 
 function formatNr(praefix, jahr, n) {
   return `${(praefix || 'Q').trim()}-${jahr}-${String(n).padStart(4, '0')}`;
 }
 
-/** Nächste freie laufende Nummer für ein Jahr (berücksichtigt auch bereits gespeicherte Belege) */
-async function naechsteNummer(jahr) {
-  const s = loadSettings();
-  let n = (s.zaehler[jahr] || 0) + 1;
+/** Nächste freie laufende Nummer einer Firma für ein Jahr (berücksichtigt auch bereits gespeicherte Belege) */
+async function naechsteNummer(firma, jahr) {
+  let n = ((firma && firma.zaehler[jahr]) || 0) + 1;
   try {
     const all = await dbAll();
     const used = new Set(all.map((q) => q.nr));
-    while (used.has(formatNr(s.praefix, jahr, n))) n++;
+    while (used.has(formatNr(firma && firma.praefix, jahr, n))) n++;
   } catch (e) { /* ohne DB nur Zähler verwenden */ }
   return n;
 }
@@ -356,9 +386,9 @@ function buildPdf(q) {
 
   doc.setProperties({
     title: `Quittung ${q.nr}`,
-    subject: `${artText} ${fmt(q.betrag)} EUR, ${dmy(q.datum)}: ${q.zweck}`,
+    subject: `${F.firma}: ${artText} ${fmt(q.betrag)} EUR, ${dmy(q.datum)}: ${q.zweck}`,
     author: F.firma,
-    keywords: `Quittung, Barbeleg, Kassenbuch, ${artText}, ${q.nr}`,
+    keywords: `Quittung, Barbeleg, Kassenbuch, ${artText}, ${q.nr}, ${F.firma}`,
     creator: `Quittungsprogramm ${APP_VERSION}`
   });
 
@@ -368,6 +398,10 @@ function buildPdf(q) {
   // ---------- Kopf ----------
   let y = 24;
   doc.setFont('helvetica', 'bold');
+  doc.setFontSize(10.5);
+  doc.setTextColor(20, 83, 45);
+  doc.text(doc.splitTextToSize(F.firma, 105)[0], L, 13);
+
   doc.setFontSize(26);
   black();
   doc.text('QUITTUNG', L, y);
@@ -576,7 +610,7 @@ async function sharePdf(q) {
       await navigator.share({
         files: [file],
         title: `Quittung ${q.nr}`,
-        text: `Quittung ${q.nr} vom ${dmy(q.datum)} über ${fmt(q.betrag)} EUR`
+        text: `Quittung ${q.nr} (${q.firma.firma}) vom ${dmy(q.datum)} über ${fmt(q.betrag)} EUR`
       });
     } catch (e) {
       if (e && e.name !== 'AbortError') { toast('Teilen nicht möglich – PDF wird gespeichert.'); downloadPdf(q); }
@@ -600,30 +634,44 @@ function showView(name) {
   document.querySelectorAll('.view').forEach((v) => v.classList.toggle('active', v.id === 'view-' + name));
   document.querySelectorAll('.tab').forEach((t) => t.classList.toggle('active', t.dataset.view === name));
   if (name === 'verlauf') renderList();
-  if (name === 'einstellungen') fillSettingsForm();
+  if (name === 'einstellungen') {
+    renderFirmen();
+    if (!loadSettings().firmen.length) editFirma(null);
+  }
   if (name === 'neu') requestAnimationFrame(() => pad.resize());
   window.scrollTo(0, 0);
 }
 document.querySelectorAll('.tab').forEach((t) => t.addEventListener('click', () => showView(t.dataset.view)));
-
-function settingsComplete(s) {
-  return !!(s.firma && s.strasse && s.plzOrt);
-}
 
 function currentArt() {
   return formQ.elements.art.value;
 }
 
 function updateBrand() {
-  const s = loadSettings();
-  $('#brandFirma').textContent = s.firma || 'Firmendaten fehlen';
+  const f = aktiveFirma(loadSettings());
+  $('#brandFirma').textContent = f ? f.firma : 'Noch keine Firma angelegt';
 }
 
-/** Felder passend zu Einnahme/Ausgabe beschriften */
-function applyArt(setDefaults) {
+/** Auswahlliste „Quittung für Firma“ – nur sichtbar, wenn es mehr als eine Firma gibt */
+function renderFirmaSelect() {
   const s = loadSettings();
+  const sel = $('#fFirma');
+  sel.innerHTML = '';
+  for (const f of s.firmen) {
+    const o = document.createElement('option');
+    o.value = f.id;
+    o.textContent = f.firma;
+    sel.appendChild(o);
+  }
+  sel.value = s.aktiveFirma;
+  $('#firmaWahl').hidden = s.firmen.length < 2;
+}
+
+/** Felder passend zu Einnahme/Ausgabe und gewählter Firma beschriften */
+function applyArt(setDefaults) {
+  const f = aktiveFirma(loadSettings());
   const art = currentArt();
-  const firmaTxt = [s.firma, s.strasse, s.plzOrt].filter(Boolean).join(', ') || '– bitte unter „Firma“ eintragen –';
+  const firmaTxt = f ? [f.firma, f.strasse, f.plzOrt].filter(Boolean).join(', ') : '– bitte unter „Firmen“ anlegen –';
   if (art === 'einnahme') {
     $('#hPartner').textContent = 'Gezahlt von (Kunde / Zahler)';
     $('#fixedParty').innerHTML = '<b>Empfänger (wir)</b>';
@@ -639,7 +687,7 @@ function applyArt(setDefaults) {
   }
   $('#fixedParty').append(document.createTextNode(firmaTxt));
   if (setDefaults) {
-    $('#fUst').value = art === 'einnahme' ? (s.kleinunternehmer ? 'ku' : (s.standardUst || '19')) : '0';
+    $('#fUst').value = art === 'einnahme' ? (f && f.kleinunternehmer ? 'ku' : ((f && f.standardUst) || '19')) : '0';
   }
   updateCalc();
 }
@@ -647,7 +695,7 @@ function applyArt(setDefaults) {
 function updateCalc() {
   const cents = parseEuro($('#fBetrag').value);
   const box = $('#calcBox');
-  const s = loadSettings();
+  const f = aktiveFirma(loadSettings());
   if (!(cents > 0)) { box.hidden = true; } else {
     const st = steuer(cents, $('#fUst').value);
     box.innerHTML = '';
@@ -675,7 +723,7 @@ function updateCalc() {
   const hint = $('#hint250');
   const fehlt = [];
   if (currentArt() === 'einnahme' && cents > 25000) {
-    if (!s.steuernr && !s.ustid) fehlt.push('Steuernummer oder USt-IdNr. (unter „Firma“)');
+    if (f && !f.steuernr && !f.ustid) fehlt.push(`Steuernummer oder USt-IdNr. von ${f.firma} (unter „Firmen“)`);
     if (!$('#fPartnerAdresse').value.trim()) fehlt.push('Anschrift des Kunden');
   }
   if (fehlt.length) {
@@ -684,13 +732,20 @@ function updateCalc() {
   } else hint.hidden = true;
 }
 
-async function resetForm() {
-  const s = loadSettings();
-  formQ.reset();
-  $('#fDatum').value = todayIso();
-  $('#fOrt').value = s.ort || '';
+/** Quittungsnummer für die gewählte Firma setzen */
+async function setNummer() {
+  const f = aktiveFirma(loadSettings());
   const jahr = new Date().getFullYear();
-  $('#fNr').value = formatNr(s.praefix, jahr, await naechsteNummer(jahr));
+  $('#fNr').value = f ? formatNr(f.praefix, jahr, await naechsteNummer(f, jahr)) : '';
+}
+
+async function resetForm() {
+  const f = aktiveFirma(loadSettings());
+  formQ.reset();
+  renderFirmaSelect();
+  $('#fDatum').value = todayIso();
+  $('#fOrt').value = (f && f.ort) || '';
+  await setNummer();
   pad.clear();
   formQ.querySelectorAll('.invalid').forEach((el) => el.classList.remove('invalid'));
   $('#formError').hidden = true;
@@ -703,9 +758,22 @@ function showError(el, msg) {
   el.scrollIntoView({ behavior: 'smooth', block: 'center' });
 }
 
-formQ.addEventListener('change', (e) => {
+formQ.addEventListener('change', async (e) => {
   if (e.target.name === 'art') applyArt(true);
   if (e.target.name === 'ust') updateCalc();
+  if (e.target.name === 'firmaId') {
+    const s = loadSettings();
+    const alt = aktiveFirma(s);
+    s.aktiveFirma = e.target.value;
+    saveSettings(s);
+    const neu = aktiveFirma(s);
+    // Ort nur übernehmen, wenn er noch der Standard der vorherigen Firma war
+    if (!$('#fOrt').value.trim() || (alt && $('#fOrt').value.trim() === alt.ort)) $('#fOrt').value = neu.ort || '';
+    updateBrand();
+    await setNummer();
+    applyArt(true);
+    toast(`Quittung für: ${neu.firma}`);
+  }
 });
 $('#fBetrag').addEventListener('input', updateCalc);
 $('#fPartnerAdresse').addEventListener('input', updateCalc);
@@ -723,13 +791,14 @@ $('#btnReset').addEventListener('click', () => {
 formQ.addEventListener('submit', async (e) => {
   e.preventDefault();
   const s = loadSettings();
+  const firma = aktiveFirma(s);
   const err = $('#formError');
   err.hidden = true;
   formQ.querySelectorAll('.invalid').forEach((el) => el.classList.remove('invalid'));
   $('.sigwrap').classList.remove('invalid');
 
-  if (!settingsComplete(s)) {
-    showError(err, 'Bitte zuerst unter „Firma“ Firmenname und Anschrift eintragen.');
+  if (!firma) {
+    showError(err, 'Bitte zuerst unter „Firmen“ eine Firma anlegen.');
     return;
   }
 
@@ -773,11 +842,12 @@ formQ.addEventListener('submit', async (e) => {
       return;
     }
 
-    q.id = (crypto.randomUUID && crypto.randomUUID()) || String(Date.now()) + Math.random().toString(16).slice(2);
+    q.id = neueId();
     q.unterschrift = pad.export();
+    q.firmaId = firma.id;
     q.firma = {
-      firma: s.firma, strasse: s.strasse, plzOrt: s.plzOrt,
-      steuernr: s.steuernr, ustid: s.ustid, kontakt: s.kontakt
+      firma: firma.firma, strasse: firma.strasse, plzOrt: firma.plzOrt,
+      steuernr: firma.steuernr, ustid: firma.ustid, kontakt: firma.kontakt
     };
     q.erstellt = new Date().toISOString();
     q.erstelltText = nowStamp();
@@ -786,17 +856,17 @@ formQ.addEventListener('submit', async (e) => {
 
     await dbAdd(q);
 
-    // Zähler fortschreiben (falls die Nummer zum Schema passt)
+    // Zähler der Firma fortschreiben (falls die Nummer zum Schema passt)
     const m = q.nr.match(/-(\d{4})-(\d+)$/);
     if (m) {
       const jahr = m[1], n = parseInt(m[2], 10);
-      if (!s.zaehler[jahr] || n > s.zaehler[jahr]) s.zaehler[jahr] = n;
+      if (!firma.zaehler[jahr] || n > firma.zaehler[jahr]) firma.zaehler[jahr] = n;
       saveSettings(s);
     }
 
     lastCreated = q;
     $('#doneNr').textContent = q.nr;
-    $('#doneInfo').textContent = `${q.art === 'einnahme' ? 'Einnahme' : 'Ausgabe'} · ${fmt(q.betrag)} € · ${q.partnerName} · ${dmy(q.datum)}`;
+    $('#doneInfo').textContent = `${q.firma.firma} · ${q.art === 'einnahme' ? 'Einnahme' : 'Ausgabe'} · ${fmt(q.betrag)} € · ${q.partnerName} · ${dmy(q.datum)}`;
     formQ.hidden = true;
     $('#doneBox').hidden = false;
     window.scrollTo(0, 0);
@@ -826,6 +896,21 @@ let listCache = [];
 
 async function renderList() {
   const list = $('#list');
+  const s = loadSettings();
+
+  // Filter nach Firma (nur bei mehreren Firmen)
+  const filter = $('#filterFirma');
+  const vorher = filter.value;
+  filter.innerHTML = '<option value="">Alle Firmen</option>';
+  for (const f of s.firmen) {
+    const o = document.createElement('option');
+    o.value = f.id;
+    o.textContent = f.firma;
+    filter.appendChild(o);
+  }
+  filter.value = s.firmen.some((f) => f.id === vorher) ? vorher : '';
+  filter.hidden = s.firmen.length < 2;
+
   try {
     listCache = (await dbAll()).sort((a, b) => (b.erstellt || '').localeCompare(a.erstellt || ''));
   } catch (e) {
@@ -835,11 +920,19 @@ async function renderList() {
   drawList();
 }
 
+function gefilterteListe() {
+  const s = loadSettings();
+  const term = $('#search').value.trim().toLowerCase();
+  const firmaId = $('#filterFirma').value;
+  return listCache.filter((q) =>
+    (!firmaId || firmaIdVon(q, s) === firmaId) &&
+    (!term || [q.nr, q.firma && q.firma.firma, q.partnerName, q.zweck, dmy(q.datum), fmt(q.betrag)].join(' ').toLowerCase().includes(term)));
+}
+
 function drawList() {
   const list = $('#list');
-  const term = $('#search').value.trim().toLowerCase();
-  const items = listCache.filter((q) => !term ||
-    [q.nr, q.partnerName, q.zweck, dmy(q.datum), fmt(q.betrag)].join(' ').toLowerCase().includes(term));
+  const mehrereFirmen = loadSettings().firmen.length > 1;
+  const items = gefilterteListe();
   list.innerHTML = '';
   if (!items.length) {
     list.innerHTML = `<div class="empty">${listCache.length ? 'Nichts gefunden.' : 'Noch keine Quittungen erstellt.'}</div>`;
@@ -849,6 +942,7 @@ function drawList() {
     const el = document.createElement('div');
     el.className = 'item';
     el.innerHTML = `
+      <div class="item-firma" hidden></div>
       <div class="item-top"><span class="item-nr"></span><span class="item-amt"></span></div>
       <div class="item-meta"></div>
       <div class="btnrow">
@@ -856,6 +950,10 @@ function drawList() {
         <button type="button" class="btn small" data-a="dl">Speichern</button>
         <button type="button" class="btn small" data-a="open">Ansehen</button>
       </div>`;
+    if (mehrereFirmen && q.firma) {
+      $('.item-firma', el).textContent = q.firma.firma;
+      $('.item-firma', el).hidden = false;
+    }
     $('.item-nr', el).textContent = q.nr;
     const amt = $('.item-amt', el);
     amt.textContent = (q.art === 'einnahme' ? '+ ' : '− ') + fmt(q.betrag) + ' €';
@@ -868,40 +966,119 @@ function drawList() {
   }
 }
 $('#search').addEventListener('input', drawList);
+$('#filterFirma').addEventListener('change', drawList);
 
 $('#btnCsv').addEventListener('click', () => {
-  if (!listCache.length) { toast('Noch keine Quittungen vorhanden.'); return; }
+  const items = gefilterteListe();
+  if (!items.length) { toast('Keine Quittungen in der Auswahl.'); return; }
   const esc = (v) => '"' + String(v ?? '').replace(/"/g, '""') + '"';
-  const rows = [['Nr', 'Datum', 'Art', 'Betrag brutto', 'USt-Satz', 'Netto', 'USt', 'Zahler/Empfänger', 'Verwendungszweck', 'Zahlungsart', 'Dateiname']];
-  const sorted = [...listCache].sort((a, b) => (a.datum + a.nr).localeCompare(b.datum + b.nr));
+  const rows = [['Firma', 'Nr', 'Datum', 'Art', 'Betrag brutto', 'USt-Satz', 'Netto', 'USt', 'Zahler/Empfänger', 'Verwendungszweck', 'Zahlungsart', 'Dateiname']];
+  const sorted = [...items].sort((a, b) => ((a.firma && a.firma.firma) + a.datum + a.nr).localeCompare((b.firma && b.firma.firma) + b.datum + b.nr));
   for (const q of sorted) {
     const st = steuer(q.betrag, q.ust);
-    rows.push([q.nr, dmy(q.datum), q.art === 'einnahme' ? 'Einnahme' : 'Ausgabe', fmt(q.betrag),
+    rows.push([q.firma && q.firma.firma, q.nr, dmy(q.datum), q.art === 'einnahme' ? 'Einnahme' : 'Ausgabe', fmt(q.betrag),
       q.ust === 'ku' ? '§19' : st.satz + ' %', fmt(st.netto), fmt(st.ust), q.partnerName, q.zweck, q.zahlungsart, q.dateiname]);
   }
   const csv = '﻿' + rows.map((r) => r.map(esc).join(';')).join('\r\n');
+  const firmaId = $('#filterFirma').value;
+  const firma = loadSettings().firmen.find((f) => f.id === firmaId);
   const url = URL.createObjectURL(new Blob([csv], { type: 'text/csv;charset=utf-8' }));
   const a = document.createElement('a');
   a.href = url;
-  a.download = `Quittungen_${todayIso()}.csv`;
+  a.download = `Quittungen_${firma ? slug(firma.firma) + '_' : ''}${todayIso()}.csv`;
   document.body.appendChild(a);
   a.click();
   a.remove();
   setTimeout(() => URL.revokeObjectURL(url), 60000);
 });
 
-/* ---------- Einstellungen ---------- */
+/* ---------- Firmen verwalten ---------- */
 
-async function fillSettingsForm() {
+const FIRMA_FELDER = ['firma', 'strasse', 'plzOrt', 'steuernr', 'ustid', 'kontakt', 'ort'];
+
+async function renderFirmen() {
   const s = loadSettings();
-  const fe = formS.elements;
-  ['firma', 'strasse', 'plzOrt', 'steuernr', 'ustid', 'kontakt', 'ort', 'praefix'].forEach((k) => { fe[k].value = s[k] || ''; });
-  fe.standardUst.value = s.standardUst || '19';
-  fe.kleinunternehmer.checked = !!s.kleinunternehmer;
+  const box = $('#firmenListe');
+  box.innerHTML = '';
+  if (!s.firmen.length) {
+    box.innerHTML = '<div class="empty">Noch keine Firma angelegt.</div>';
+    return;
+  }
   const jahr = new Date().getFullYear();
-  fe.naechste.value = await naechsteNummer(jahr);
-  updateNumPreview();
+  for (const f of s.firmen) {
+    const el = document.createElement('div');
+    el.className = 'item';
+    el.innerHTML = `
+      <div class="item-top"><span class="item-nr"></span></div>
+      <div class="item-meta adr"></div>
+      <div class="item-meta nr"></div>
+      <div class="btnrow">
+        <button type="button" class="btn small" data-a="edit">Bearbeiten</button>
+        <button type="button" class="btn small danger" data-a="del">Entfernen</button>
+      </div>`;
+    $('.item-nr', el).textContent = f.firma;
+    if (f.id === s.aktiveFirma && s.firmen.length > 1) {
+      const b = document.createElement('span');
+      b.className = 'badge';
+      b.textContent = 'ausgewählt';
+      $('.item-nr', el).appendChild(b);
+    }
+    $('.adr', el).textContent = [f.strasse, f.plzOrt].filter(Boolean).join(', ');
+    $('.nr', el).textContent = `Nächste Nummer: ${formatNr(f.praefix, jahr, await naechsteNummer(f, jahr))}`;
+    el.querySelector('[data-a="edit"]').addEventListener('click', () => editFirma(f.id));
+    const del = el.querySelector('[data-a="del"]');
+    del.hidden = s.firmen.length < 2;
+    del.addEventListener('click', () => removeFirma(f.id));
+    box.appendChild(el);
+  }
+}
+
+/** Vorschlag für ein freies Kürzel bei einer neuen Firma */
+function freiesKuerzel(s) {
+  const vergeben = new Set(s.firmen.map((f) => f.praefix.toUpperCase()));
+  if (!vergeben.has('Q')) return 'Q';
+  for (let i = 2; i < 100; i++) if (!vergeben.has('Q' + i)) return 'Q' + i;
+  return '';
+}
+
+async function editFirma(id) {
+  const s = loadSettings();
+  const f = id ? s.firmen.find((x) => x.id === id) : null;
+  const fe = formS.elements;
+  formS.dataset.id = f ? f.id : '';
+  $('#hFirmaForm').textContent = f ? 'Firma bearbeiten' : (s.firmen.length ? 'Weitere Firma anlegen' : 'Erste Firma anlegen');
+  FIRMA_FELDER.forEach((k) => { fe[k].value = f ? f[k] || '' : ''; });
+  if (!f && s.firmen[0]) fe.ort.value = s.firmen[0].ort || '';
+  fe.praefix.value = f ? f.praefix : freiesKuerzel(s);
+  fe.standardUst.value = (f && f.standardUst) || '19';
+  fe.kleinunternehmer.checked = !!(f && f.kleinunternehmer);
+  fe.naechste.value = await naechsteNummer(f || normFirma({ praefix: fe.praefix.value }), new Date().getFullYear());
+  formS.querySelectorAll('.invalid').forEach((el) => el.classList.remove('invalid'));
   $('#settingsError').hidden = true;
+  $('#btnFirmaAbbrechen').hidden = !s.firmen.length;
+  updateNumPreview();
+  formS.hidden = false;
+  formS.scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
+function closeFirmaForm() {
+  formS.hidden = true;
+  formS.dataset.id = '';
+}
+
+async function removeFirma(id) {
+  const s = loadSettings();
+  const f = s.firmen.find((x) => x.id === id);
+  if (!f || s.firmen.length < 2) return;
+  if (!confirm(`„${f.firma}“ entfernen?\n\nBereits erstellte Quittungen dieser Firma bleiben im Verlauf erhalten.`)) return;
+  s.firmen = s.firmen.filter((x) => x.id !== id);
+  if (s.aktiveFirma === id) s.aktiveFirma = s.firmen[0].id;
+  saveSettings(s);
+  if (formS.dataset.id === id) closeFirmaForm();
+  updateBrand();
+  renderFirmen();
+  if (!lastCreated) await resetForm();
+  toast('Firma entfernt.');
 }
 
 function updateNumPreview() {
@@ -911,39 +1088,58 @@ function updateNumPreview() {
 }
 formS.elements.praefix.addEventListener('input', updateNumPreview);
 formS.elements.naechste.addEventListener('input', updateNumPreview);
+formS.addEventListener('input', (e) => e.target.classList.remove('invalid'));
+$('#btnFirmaNeu').addEventListener('click', () => editFirma(null));
+$('#btnFirmaAbbrechen').addEventListener('click', closeFirmaForm);
 
 formS.addEventListener('submit', async (e) => {
   e.preventDefault();
   const fe = formS.elements;
   const s = loadSettings();
-  ['firma', 'strasse', 'plzOrt', 'steuernr', 'ustid', 'kontakt', 'ort'].forEach((k) => { s[k] = fe[k].value.trim(); });
-  s.praefix = fe.praefix.value.trim().replace(/[^\w-]/g, '') || 'Q';
-  s.standardUst = fe.standardUst.value;
-  s.kleinunternehmer = fe.kleinunternehmer.checked;
+  const id = formS.dataset.id;
+  const bisher = id ? s.firmen.find((x) => x.id === id) : null;
+  const f = normFirma(bisher || { id: neueId() });
 
-  const missing = [];
-  ['firma', 'strasse', 'plzOrt'].forEach((k) => {
-    fe[k].classList.toggle('invalid', !s[k]);
-    if (!s[k]) missing.push(fe[k].closest('.field').querySelector('span').textContent.replace(' *', ''));
+  FIRMA_FELDER.forEach((k) => { f[k] = fe[k].value.trim(); });
+  f.praefix = fe.praefix.value.trim().replace(/[^\w-]/g, '');
+  f.standardUst = fe.standardUst.value;
+  f.kleinunternehmer = fe.kleinunternehmer.checked;
+
+  const fehler = [];
+  ['firma', 'strasse', 'plzOrt', 'praefix'].forEach((k) => {
+    fe[k].classList.toggle('invalid', !f[k]);
+    if (!f[k]) fehler.push(fe[k].closest('.field').querySelector('span').textContent.replace(' *', ''));
   });
-  if (missing.length) {
-    showError($('#settingsError'), 'Bitte ausfüllen: ' + missing.join(', ') + '.');
+  if (fehler.length) {
+    showError($('#settingsError'), 'Bitte ausfüllen: ' + fehler.join(', ') + '.');
+    return;
+  }
+  const doppelt = s.firmen.find((x) => x.id !== f.id && x.praefix.toUpperCase() === f.praefix.toUpperCase());
+  if (doppelt) {
+    fe.praefix.classList.add('invalid');
+    showError($('#settingsError'), `Das Kürzel „${f.praefix}“ hat schon „${doppelt.firma}“. Jede Firma braucht ein eigenes Kürzel, sonst gibt es doppelte Quittungsnummern.`);
     return;
   }
 
   const jahr = String(new Date().getFullYear());
   const n = parseInt(fe.naechste.value, 10);
-  if (n > 0) s.zaehler[jahr] = n - 1;
+  if (n > 0) f.zaehler[jahr] = n - 1;
+
+  const ersteFirma = !s.firmen.length;
+  if (bisher) s.firmen = s.firmen.map((x) => (x.id === f.id ? f : x));
+  else s.firmen.push(f);
+  if (ersteFirma) s.aktiveFirma = f.id;
 
   if (!saveSettings(s)) {
     showError($('#settingsError'), 'Speichern nicht möglich (privater Modus?).');
     return;
   }
-  $('#settingsError').hidden = true;
+  closeFirmaForm();
   updateBrand();
-  toast('Firmendaten gespeichert.');
+  await renderFirmen();
   if (!lastCreated) await resetForm();
-  showView('neu');
+  toast(bisher ? 'Firma gespeichert.' : `„${f.firma}“ angelegt.`);
+  if (ersteFirma) showView('neu');
 });
 
 /* ---------- Start ---------- */
@@ -951,9 +1147,9 @@ formS.addEventListener('submit', async (e) => {
 async function init() {
   updateBrand();
   await resetForm();
-  if (!settingsComplete(loadSettings())) {
+  if (!loadSettings().firmen.length) {
     showView('einstellungen');
-    toast('Willkommen! Bitte zuerst die Firmendaten eintragen.', 4000);
+    toast('Willkommen! Bitte zuerst die Firma anlegen.', 4000);
   }
   // Speicher dauerhaft machen (Browser darf Daten dann nicht automatisch löschen)
   if (navigator.storage && navigator.storage.persist) {
