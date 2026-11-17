@@ -30,6 +30,15 @@ enum MediaCollectionEnum: string
     /** Anhänge aus den Website-Formularen (Lebenslauf, Foto einer Fundsache) – private Disk */
     case MessageAttachments = 'message-attachments';
 
+    /** PDF einer Quittung – private Disk */
+    case ReceiptPdf = 'receipt-pdfs';
+
+    /** Unterschrift auf einer Quittung (JPEG) – private Disk */
+    case ReceiptSignature = 'receipt-signatures';
+
+    /** Rider-Dateien eines DJs bzw. Kontakts (PDF, Fotos) – private Disk */
+    case ContactRider = 'contact-riders';
+
     /**
      * Collections mit Videos statt Bildern.
      */

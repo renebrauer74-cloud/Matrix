@@ -107,6 +107,38 @@ Route::prefix('admin')->name('admin.')->group(function () {
         Route::post('benutzer', [Admin\UserController::class, 'store'])->name('users.store');
         Route::delete('benutzer/{user}', [Admin\UserController::class, 'destroy'])->name('users.destroy');
 
+        // Schnittstelle der Quittungs-App – vor der Datei-Route, die sonst alles unter quittung/ abfängt
+        Route::prefix('quittung/api')->name('receipts.api.')->group(function () {
+            Route::get('stand', Admin\ReceiptSyncController::class)->name('sync');
+
+            Route::post('firmen', [Admin\ReceiptCompanyController::class, 'store'])->name('companies.store');
+            Route::put('firmen/{receiptCompany}', [Admin\ReceiptCompanyController::class, 'update'])->name('companies.update');
+            Route::delete('firmen/{receiptCompany}', [Admin\ReceiptCompanyController::class, 'destroy'])->name('companies.destroy');
+
+            Route::post('kontakte', [Admin\ReceiptContactController::class, 'store'])->name('contacts.store');
+            Route::put('kontakte/{receiptContact}', [Admin\ReceiptContactController::class, 'update'])->name('contacts.update');
+            Route::delete('kontakte/{receiptContact}', [Admin\ReceiptContactController::class, 'destroy'])->name('contacts.destroy');
+            Route::post('kontakte/{receiptContact}/dateien', [Admin\ReceiptContactFileController::class, 'store'])->name('contacts.files.store');
+            Route::get('kontakte/{receiptContact}/dateien/{media}', [Admin\ReceiptContactFileController::class, 'show'])->whereNumber('media')->name('contacts.files.show');
+            Route::delete('kontakte/{receiptContact}/dateien/{media}', [Admin\ReceiptContactFileController::class, 'destroy'])->whereNumber('media')->name('contacts.files.destroy');
+
+            Route::post('mitarbeiter', [Admin\ReceiptEmployeeController::class, 'store'])->name('employees.store');
+            Route::put('mitarbeiter/{receiptEmployee}', [Admin\ReceiptEmployeeController::class, 'update'])->name('employees.update');
+            Route::delete('mitarbeiter/{receiptEmployee}', [Admin\ReceiptEmployeeController::class, 'destroy'])->name('employees.destroy');
+
+            Route::post('quittungen', [Admin\ReceiptController::class, 'store'])->name('receipts.store');
+            Route::put('quittungen/{receipt}', [Admin\ReceiptController::class, 'update'])->name('receipts.update');
+            Route::delete('quittungen/{receipt}', [Admin\ReceiptController::class, 'destroy'])->name('receipts.destroy');
+            Route::post('quittungen/{receipt}/pdf', [Admin\ReceiptPdfController::class, 'store'])->name('receipts.pdf.store');
+            Route::get('quittungen/{receipt}/pdf', [Admin\ReceiptPdfController::class, 'show'])->name('receipts.pdf.show');
+            Route::get('quittungen/{receipt}/unterschrift', [Admin\ReceiptPdfController::class, 'signature'])->name('receipts.signature');
+            Route::post('quittungen/{receipt}/gebucht', Admin\ReceiptBookingController::class)->name('receipts.booking');
+            Route::post('quittungen/{receipt}/storno', Admin\ReceiptCancellationController::class)->name('receipts.cancel');
+
+            Route::post('umzug/firmen', [Admin\ReceiptImportController::class, 'companies'])->name('import.companies');
+            Route::post('umzug/quittungen', [Admin\ReceiptImportController::class, 'receipt'])->name('import.receipts');
+        });
+
         Route::get('quittung', [Admin\ReceiptAppController::class, 'show'])->name('receipts.show');
         Route::get('quittung/{path}', [Admin\ReceiptAppController::class, 'file'])->where('path', '.*')->name('receipts.file');
 

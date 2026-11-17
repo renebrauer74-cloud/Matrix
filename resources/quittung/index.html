@@ -18,36 +18,54 @@
 <header class="topbar">
   <div class="brand">
     <img src="icons/icon-192.png" alt="" width="32" height="32">
-    <div>
+    <div class="brand-text">
       <div class="brand-title">Quittung</div>
-      <div class="brand-sub" id="brandFirma">–</div>
+      <div class="brand-sub"><span id="brandFirma">–</span> · <span class="sync" id="syncState" data-state="loading">lädt …</span></div>
     </div>
   </div>
   <nav class="tabs" role="tablist">
     <button class="tab active" data-view="neu" role="tab">Neu</button>
     <button class="tab" data-view="verlauf" role="tab">Verlauf</button>
-    <button class="tab" data-view="einstellungen" role="tab">Firmen</button>
+    <button class="tab" data-view="stammdaten" role="tab">Stammdaten</button>
   </nav>
 </header>
 
 <main>
+  <div class="error" id="loginBox" hidden>
+    Deine Anmeldung ist abgelaufen. <a href="../login">Neu anmelden</a>
+  </div>
+
   <!-- ================= NEUE QUITTUNG ================= -->
   <section id="view-neu" class="view active">
+    <div class="card banner" id="importBox" hidden>
+      <h2>Daten auf diesem Gerät gefunden</h2>
+      <p class="muted">Diese Quittungen wurden mit der alten Version nur auf diesem Gerät gespeichert. Übernimm sie jetzt ins gemeinsame Konto, dann sind sie auf allen Geräten da.</p>
+      <div class="counts"><div><b id="importFirmen">0</b><small>Firmen</small></div><div><b id="importBelege">0</b><small>Quittungen</small></div></div>
+      <p class="warn small">Quittungen, die es im Konto schon gibt (gleiche Nummer), werden übersprungen. Die Daten auf diesem Gerät bleiben zusätzlich erhalten.</p>
+      <button type="button" class="btn primary block" id="btnImport">Jetzt übernehmen</button>
+      <button type="button" class="btn ghost block" id="btnImportLater">Später</button>
+    </div>
+
     <form id="formQ" novalidate autocomplete="off">
+      <div class="warn correction" id="correctionBox" hidden>
+        <span>Korrektur zu <b id="correctionNr"></b>: Angaben prüfen, Art umstellen und neu unterschreiben lassen.</span>
+        <button type="button" class="btn small" id="btnCorrectionCancel">Keine Korrektur</button>
+      </div>
       <div class="card">
         <label class="field firmawahl" id="firmaWahl" hidden>
           <span>Quittung für Firma</span>
           <select name="firmaId" id="fFirma"></select>
         </label>
-        <div class="seg" role="radiogroup" aria-label="Art der Zahlung">
+        <div class="seg seg3" role="radiogroup" aria-label="Art der Zahlung">
           <label><input type="radio" name="art" value="einnahme" checked><span>Einnahme<small>Wir erhalten Geld</small></span></label>
           <label><input type="radio" name="art" value="ausgabe"><span>Ausgabe<small>Wir zahlen Geld aus</small></span></label>
+          <label><input type="radio" name="art" value="vorschuss"><span>Vorschuss<small>An Mitarbeiter</small></span></label>
         </div>
 
         <div class="grid2">
           <label class="field">
-            <span>Quittungs-Nr.</span>
-            <input name="nr" id="fNr" required>
+            <span>Quittungs-Nr. <em>(wird beim Speichern vergeben)</em></span>
+            <input name="nr" id="fNr" readonly tabindex="-1">
           </label>
           <label class="field">
             <span>Datum</span>
@@ -76,24 +94,38 @@
         <div class="calc" id="calcBox" hidden></div>
       </div>
 
-      <div class="card">
+      <div class="card" id="partnerCard">
         <h2 id="hPartner">Erhalten von (Zahler)</h2>
-        <label class="field">
-          <span>Name / Firma</span>
-          <input name="partnerName" id="fPartnerName" required autocomplete="off">
-        </label>
+        <div class="field suggest-field">
+          <label for="fPartnerName">Name / Firma <em>(Kontakt oder DJ suchen oder neu eintippen)</em></label>
+          <input name="partnerName" id="fPartnerName" required autocomplete="off" role="combobox" aria-expanded="false" aria-controls="partnerSuggest">
+          <div class="suggest" id="partnerSuggest" role="listbox" hidden></div>
+        </div>
+        <p class="pick-info" id="partnerInfo" hidden></p>
         <label class="field">
           <span>Anschrift <em>(optional, ab 250 € empfohlen)</em></span>
           <textarea name="partnerAdresse" id="fPartnerAdresse" rows="2" placeholder="Straße Nr.&#10;PLZ Ort"></textarea>
         </label>
+        <label class="check small-check"><input type="checkbox" name="einmalig" id="fEinmalig"> Einmalig – nicht als Kontakt speichern</label>
         <div class="fixedparty" id="fixedParty"></div>
+      </div>
+
+      <div class="card" id="employeeCard" hidden>
+        <h2>Vorschuss an</h2>
+        <div class="field suggest-field">
+          <label for="fEmployee">Mitarbeiter <em>(suchen und auswählen)</em></label>
+          <input id="fEmployee" autocomplete="off" role="combobox" aria-expanded="false" aria-controls="employeeSuggest" placeholder="Name eintippen …">
+          <div class="suggest" id="employeeSuggest" role="listbox" hidden></div>
+        </div>
+        <p class="pick-info" id="employeeInfo" hidden></p>
+        <p class="muted small" id="employeeEmpty" hidden>Noch keine Mitarbeiter angelegt. Einfach den Namen eintippen und „als Mitarbeiter anlegen“ wählen.</p>
       </div>
 
       <div class="card">
         <h2>Wofür?</h2>
         <label class="field">
           <span>Verwendungszweck / Leistung</span>
-          <textarea name="zweck" id="fZweck" rows="2" required placeholder="z. B. Reparatur Fahrrad, Material, Aushilfe 12.11."></textarea>
+          <textarea name="zweck" id="fZweck" rows="2" required placeholder="z. B. Gage Samstag, Material, Aushilfe 12.11."></textarea>
         </label>
         <div class="grid2">
           <label class="field">
@@ -140,7 +172,7 @@
         <button type="button" class="btn" id="btnDownload">PDF speichern</button>
         <button type="button" class="btn" id="btnOpen">PDF ansehen</button>
       </div>
-      <p class="muted small">Die PDF in sevDesk bzw. Lexware Office (lexoffice) als Beleg hochladen und der Kassenbuchung zuordnen.</p>
+      <p class="muted small">Die PDF in sevDesk bzw. Lexware Office (lexoffice) als Beleg hochladen, der Kassenbuchung zuordnen und im Verlauf als „gebucht“ markieren.</p>
       <button type="button" class="btn ghost block" id="btnNew">Neue Quittung</button>
     </div>
   </section>
@@ -153,61 +185,232 @@
         <button type="button" class="btn small" id="btnCsv">CSV-Liste</button>
       </div>
       <select id="filterFirma" class="search" hidden></select>
-      <input type="search" id="search" placeholder="Suchen (Nr., Name, Zweck)…" class="search">
+      <div class="chips" id="filterStatus" role="group" aria-label="Filter">
+        <button type="button" class="chip active" data-filter="alle">Alle</button>
+        <button type="button" class="chip" data-filter="offen">Offen</button>
+        <button type="button" class="chip" data-filter="gebucht">Gebucht</button>
+        <button type="button" class="chip" data-filter="vorschuss">Vorschüsse</button>
+        <button type="button" class="chip" data-filter="storniert">Storniert</button>
+      </div>
+      <input type="search" id="search" placeholder="Suchen (Nr., Name, Zweck) …" class="search">
+      <div class="calc" id="advanceSums" hidden></div>
       <div id="list"></div>
     </div>
   </section>
 
-  <!-- ================= EINSTELLUNGEN ================= -->
-  <section id="view-einstellungen" class="view">
-    <div class="card" id="firmenCard">
-      <div class="rowhead">
-        <h2>Firmen</h2>
-        <button type="button" class="btn small" id="btnFirmaNeu">+ Firma</button>
-      </div>
-      <p class="muted">Jede Firma hat ihren eigenen Nummernkreis. Beim Erstellen einer Quittung wählt man aus, für welche Firma sie gilt.</p>
-      <div id="firmenListe"></div>
+  <!-- ================= STAMMDATEN ================= -->
+  <section id="view-stammdaten" class="view">
+    <div class="seg seg3 segtabs" role="tablist" aria-label="Stammdaten">
+      <button type="button" class="segtab active" data-sub="firmen">Firmen</button>
+      <button type="button" class="segtab" data-sub="kontakte">Kontakte &amp; DJs</button>
+      <button type="button" class="segtab" data-sub="mitarbeiter">Mitarbeiter</button>
     </div>
 
-    <form id="formS" class="card" novalidate hidden>
-      <h2 id="hFirmaForm">Firma bearbeiten</h2>
-      <p class="muted">Erscheint auf jeder Quittung dieser Firma. Wird nur auf diesem Gerät gespeichert.</p>
-      <label class="field"><span>Firmenname *</span><input name="firma" required></label>
-      <label class="field"><span>Straße, Nr. *</span><input name="strasse" required></label>
-      <label class="field"><span>PLZ, Ort *</span><input name="plzOrt" required></label>
-      <div class="grid2">
-        <label class="field"><span>Steuernummer</span><input name="steuernr"></label>
-        <label class="field"><span>USt-IdNr.</span><input name="ustid"></label>
-      </div>
-      <label class="field"><span>Kontakt (Telefon / E-Mail, optional)</span><input name="kontakt"></label>
-      <label class="check"><input type="checkbox" name="kleinunternehmer"> Kleinunternehmer nach § 19 UStG</label>
-
-      <h2>Voreinstellungen</h2>
-      <div class="grid2">
-        <label class="field"><span>Standard-Ort</span><input name="ort"></label>
-        <label class="field"><span>Standard-USt bei Einnahmen</span>
-          <select name="standardUst">
-            <option value="19">19 %</option>
-            <option value="7">7 %</option>
-            <option value="0">ohne USt</option>
-          </select>
-        </label>
+    <div class="sub active" id="sub-firmen">
+      <div class="card" id="firmenCard">
+        <div class="rowhead">
+          <h2>Firmen</h2>
+          <button type="button" class="btn small" id="btnFirmaNeu">+ Firma</button>
+        </div>
+        <p class="muted">Jede Firma hat ihren eigenen Nummernkreis. Beim Erstellen einer Quittung wählt man aus, für welche Firma sie gilt. Die Nummern vergibt der Server, doppelte Nummern gibt es nicht.</p>
+        <div id="firmenListe"></div>
       </div>
 
-      <h2>Nummernkreis</h2>
-      <p class="muted">Format: <b id="numPreview">Q-2026-0001</b>. Jede Firma braucht ein eigenes Kürzel (z. B. „MX“, „T1“, „T2“). Werden mehrere Geräte genutzt, zusätzlich je Gerät unterscheiden (z. B. „MX1“, „MX2“), damit keine Nummer doppelt vergeben wird.</p>
-      <div class="grid2">
-        <label class="field"><span>Kürzel</span><input name="praefix" maxlength="10"></label>
-        <label class="field"><span>Nächste laufende Nr. (dieses Jahr)</span><input name="naechste" inputmode="numeric" pattern="[0-9]*"></label>
-      </div>
+      <form id="formS" class="card" novalidate hidden>
+        <h2 id="hFirmaForm">Firma bearbeiten</h2>
+        <p class="muted">Erscheint auf jeder neuen Quittung dieser Firma. Bereits erstellte Quittungen ändern sich nicht.</p>
+        <label class="field"><span>Firmenname *</span><input name="name" required></label>
+        <label class="field"><span>Straße, Nr. *</span><input name="street" required></label>
+        <label class="field"><span>PLZ, Ort *</span><input name="zip_city" required></label>
+        <div class="grid2">
+          <label class="field"><span>Steuernummer</span><input name="tax_number"></label>
+          <label class="field"><span>USt-IdNr.</span><input name="vat_id"></label>
+        </div>
+        <label class="field"><span>Kontakt (Telefon / E-Mail, optional)</span><input name="contact"></label>
+        <label class="check"><input type="checkbox" name="is_small_business"> Kleinunternehmer nach § 19 UStG</label>
 
-      <div class="error" id="settingsError" hidden></div>
-      <button type="submit" class="btn primary block">Speichern</button>
-      <button type="button" class="btn ghost block" id="btnFirmaAbbrechen">Abbrechen</button>
-    </form>
-    <p class="muted small" id="storageInfo"></p>
+        <h2>Voreinstellungen</h2>
+        <div class="grid2">
+          <label class="field"><span>Standard-Ort</span><input name="default_place"></label>
+          <label class="field"><span>Standard-USt bei Einnahmen</span>
+            <select name="default_tax">
+              <option value="19">19 %</option>
+              <option value="7">7 %</option>
+              <option value="0">ohne USt</option>
+            </select>
+          </label>
+        </div>
+
+        <h2>Nummernkreis</h2>
+        <p class="muted">Format: <b id="numPreview">Q-2026-0001</b>. Jede Firma braucht ein eigenes Kürzel (z. B. „MX“, „T1“, „T2“).</p>
+        <div class="grid2">
+          <label class="field"><span>Kürzel *</span><input name="prefix" maxlength="10"></label>
+          <label class="field"><span>Nächste laufende Nr. (dieses Jahr)</span><input name="next_sequence" inputmode="numeric" pattern="[0-9]*"></label>
+        </div>
+
+        <div class="error" id="settingsError" hidden></div>
+        <button type="submit" class="btn primary block">Speichern</button>
+        <button type="button" class="btn ghost block" id="btnFirmaAbbrechen">Abbrechen</button>
+      </form>
+    </div>
+
+    <div class="sub" id="sub-kontakte">
+      <div class="card">
+        <div class="rowhead">
+          <h2>Kontakte &amp; DJs <span class="muted small" id="kontakteAnzahl"></span></h2>
+          <button type="button" class="btn small" id="btnKontaktNeu">+ Neu</button>
+        </div>
+        <div class="chips" id="kontaktFilter" role="group" aria-label="Filter">
+          <button type="button" class="chip active" data-filter="alle">Alle</button>
+          <button type="button" class="chip" data-filter="dj">Nur DJs</button>
+          <button type="button" class="chip" data-filter="andere">Andere</button>
+        </div>
+        <input type="search" id="kontaktSuche" class="search" placeholder="Suchen (Name, Ort, Rider) …">
+        <div id="kontaktListe"></div>
+      </div>
+    </div>
+
+    <div class="sub" id="sub-mitarbeiter">
+      <div class="card">
+        <div class="rowhead">
+          <h2>Mitarbeiter <span class="muted small" id="mitarbeiterAnzahl"></span></h2>
+        </div>
+        <form id="formMaNeu" class="inline-add" novalidate>
+          <input name="name" placeholder="Name des Mitarbeiters" required aria-label="Name des Mitarbeiters">
+          <input name="note" placeholder="Bereich (optional)" aria-label="Bereich">
+          <button type="submit" class="btn small primary">Anlegen</button>
+        </form>
+        <input type="search" id="maSuche" class="search" placeholder="Suchen …">
+        <div id="maListe"></div>
+      </div>
+    </div>
   </section>
 </main>
+
+<!-- ================= DIALOGE ================= -->
+<dialog class="sheet" id="dlgDetail" aria-labelledby="detailNr">
+  <div class="sheet-head">
+    <h2 id="detailNr"></h2>
+    <button type="button" class="sheet-close" data-close aria-label="Schließen">✕</button>
+  </div>
+  <div class="badges" id="detailBadges"></div>
+  <dl class="kv" id="detailInfo"></dl>
+  <div class="btnrow">
+    <button type="button" class="btn small" data-a="open">PDF ansehen</button>
+    <button type="button" class="btn small" data-a="share">Teilen</button>
+    <button type="button" class="btn small" data-a="dl">Speichern</button>
+  </div>
+  <div class="btnrow">
+    <button type="button" class="btn small" data-a="edit">Bearbeiten</button>
+    <button type="button" class="btn small" data-a="book">Als gebucht markieren</button>
+    <button type="button" class="btn small danger" data-a="remove">Löschen / Stornieren</button>
+  </div>
+  <h3>Änderungen</h3>
+  <ul class="log" id="detailLog"></ul>
+</dialog>
+
+<dialog class="sheet" id="dlgEdit" aria-labelledby="editTitle">
+  <form id="formEdit" novalidate>
+    <div class="sheet-head">
+      <h2 id="editTitle">Quittung bearbeiten</h2>
+      <button type="button" class="sheet-close" data-close aria-label="Schließen">✕</button>
+    </div>
+    <dl class="kv locked" id="editLocked"></dl>
+    <label class="field"><span>Anschrift</span><textarea name="partner_address" rows="2"></textarea></label>
+    <label class="field"><span>Verwendungszweck</span><textarea name="purpose" rows="2" required></textarea></label>
+    <div class="grid2">
+      <label class="field"><span>Zahlungsart</span>
+        <select name="payment_method"><option>Bar</option><option>EC-Karte</option><option>Überweisung</option></select>
+      </label>
+      <label class="field"><span>Ort</span><input name="place" required></label>
+    </div>
+    <label class="field"><span>Name in Druckbuchstaben</span><input name="signer_name"></label>
+    <p class="warn small">Art, Betrag, Datum, Firma und Empfänger sind unterschrieben. Um sie zu ändern: stornieren und korrigiert neu anlegen.</p>
+    <div class="error" id="editError" hidden></div>
+    <button type="submit" class="btn primary block">Speichern (neues PDF)</button>
+  </form>
+</dialog>
+
+<dialog class="sheet" id="dlgRemove" aria-labelledby="removeTitle">
+  <form id="formRemove" novalidate>
+    <div class="sheet-head">
+      <h2 id="removeTitle">Quittung entfernen</h2>
+      <button type="button" class="sheet-close" data-close aria-label="Schließen">✕</button>
+    </div>
+    <div class="choices">
+      <label class="choice" id="choiceDelete"><input type="radio" name="mode" value="delete"><span><b>Löschen</b><small id="deleteHelp">Geht, weil sie noch nicht als gebucht markiert ist. Sie verschwindet aus dem Verlauf, im Protokoll bleibt vermerkt, wer sie wann gelöscht hat.</small></span></label>
+      <label class="choice"><input type="radio" name="mode" value="cancel" checked><span><b>Stornieren</b><small>Bleibt durchgestrichen im Verlauf, die Nummer wird nicht neu vergeben. Bei gebuchten Quittungen die einzige Möglichkeit.</small></span></label>
+    </div>
+    <label class="field"><span>Grund</span><input name="reason" list="gruende" required placeholder="z. B. Einnahme statt Ausgabe gewählt"></label>
+    <datalist id="gruende">
+      <option value="Einnahme statt Ausgabe gewählt"></option>
+      <option value="Ausgabe statt Einnahme gewählt"></option>
+      <option value="Falscher Betrag"></option>
+      <option value="Falscher Empfänger bzw. Zahler"></option>
+      <option value="Falsches Datum"></option>
+      <option value="Doppelt angelegt"></option>
+    </datalist>
+    <label class="check small-check" id="correctRow"><input type="checkbox" name="correct" checked> Danach korrigiert neu anlegen (Angaben übernehmen)</label>
+    <div class="error" id="removeError" hidden></div>
+    <button type="submit" class="btn block danger-fill" id="btnRemove">Stornieren</button>
+  </form>
+</dialog>
+
+<dialog class="sheet" id="dlgContact" aria-labelledby="contactTitle">
+  <form id="formContact" novalidate>
+    <div class="sheet-head">
+      <h2 id="contactTitle">Kontakt</h2>
+      <button type="button" class="sheet-close" data-close aria-label="Schließen">✕</button>
+    </div>
+    <label class="field"><span>Name bzw. Künstlername *</span><input name="name" required></label>
+    <label class="check"><input type="checkbox" name="is_dj"> Ist ein DJ (mit Rider)</label>
+    <label class="field"><span>Bürgerlicher Name</span><input name="real_name"></label>
+    <label class="field"><span>Anschrift</span><textarea name="address" rows="2" placeholder="Straße Nr.&#10;PLZ Ort"></textarea></label>
+    <div class="grid2">
+      <label class="field"><span>Telefon</span><input name="phone" type="tel"></label>
+      <label class="field"><span>E-Mail</span><input name="email" type="email"></label>
+    </div>
+    <div id="riderFields">
+      <h2>Rider</h2>
+      <label class="field"><span>Technik</span><textarea name="technical_rider" rows="3" placeholder="z. B. 2× CDJ-3000, DJM-900NXS2, 2 Monitore"></textarea></label>
+      <label class="field"><span>Hospitality</span><textarea name="hospitality_rider" rows="3" placeholder="z. B. Getränke, Essen, Gästeliste"></textarea></label>
+    </div>
+    <label class="field"><span>Notizen</span><textarea name="notes" rows="2"></textarea></label>
+    <div id="contactFiles">
+      <h2 id="filesTitle">Dateien</h2>
+      <div id="fileList"></div>
+      <label class="btn small upload">PDF oder Foto hochladen<input type="file" id="fileUpload" accept="application/pdf,image/*" hidden></label>
+      <p class="muted small" id="filesHint" hidden>Dateien lassen sich nach dem ersten Speichern hochladen.</p>
+    </div>
+    <div id="contactReceipts"></div>
+    <div class="error" id="contactError" hidden></div>
+    <button type="submit" class="btn primary block">Speichern</button>
+    <button type="button" class="btn ghost block danger" id="btnContactDelete">Kontakt löschen</button>
+  </form>
+</dialog>
+
+<dialog class="sheet" id="dlgEmployee" aria-labelledby="employeeTitle">
+  <form id="formEmployee" novalidate>
+    <div class="sheet-head">
+      <h2 id="employeeTitle">Mitarbeiter</h2>
+      <button type="button" class="sheet-close" data-close aria-label="Schließen">✕</button>
+    </div>
+    <label class="field"><span>Name *</span><input name="name" required></label>
+    <label class="field"><span>Bereich / Notiz</span><input name="note"></label>
+    <div id="employeeReceipts"></div>
+    <div class="error" id="employeeError" hidden></div>
+    <button type="submit" class="btn primary block">Speichern</button>
+    <button type="button" class="btn ghost block danger" id="btnEmployeeDelete">Mitarbeiter löschen</button>
+  </form>
+</dialog>
+
+<dialog class="sheet confirm" id="dlgConfirm">
+  <p id="confirmText"></p>
+  <div class="btnrow">
+    <button type="button" class="btn" data-close>Abbrechen</button>
+    <button type="button" class="btn primary" id="confirmOk">OK</button>
+  </div>
+</dialog>
 
 <div class="toast" id="toast" hidden></div>
 

@@ -1,6 +1,7 @@
-/* Service Worker: macht die App offline nutzbar.
+/* Service Worker: hält die App-Dateien vor, damit sie schnell startet.
+   Daten (api/…) gehen immer direkt an den Server und werden nie zwischengespeichert.
    Bei Änderungen an den Dateien CACHE-Version erhöhen. */
-const CACHE = 'quittung-v1.2.0';
+const CACHE = 'quittung-v2.0.0';
 const FILES = [
   './',
   './index.html',
@@ -30,7 +31,8 @@ self.addEventListener('activate', (e) => {
 // Leitet der Server um (z. B. zur Anmeldung, weil die Sitzung abgelaufen ist),
 // wird die Umleitung angezeigt, aber nie in die Offline-Kopie übernommen.
 self.addEventListener('fetch', (e) => {
-  if (e.request.method !== 'GET' || new URL(e.request.url).origin !== location.origin) return;
+  const url = new URL(e.request.url);
+  if (e.request.method !== 'GET' || url.origin !== location.origin || url.pathname.includes('/api/')) return;
   e.respondWith((async () => {
     const cache = await caches.open(CACHE);
     const fromCache = async () => {

@@ -5,7 +5,8 @@ namespace App\Actions\Receipts;
 /**
  * Liefert eine Datei der Quittungs-App (resources/quittung), passend zur Adresse im Admin-Bereich.
  *
- * Die App selbst läuft komplett im Browser: Quittungen, Unterschriften und Firmendaten bleiben auf dem Gerät.
+ * Die App baut die PDFs im Browser; Firmen, Kontakte, Mitarbeiter und Quittungen speichert sie über die
+ * Schnittstelle unter /admin/quittung/api im gemeinsamen Konto.
  */
 class LoadReceiptAppFileAction
 {
